@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import {
-  ShieldCheck, Wallet, FileCheck2, Banknote, Clock, ArrowRight, LogOut, BellRing, CreditCard, BadgeCheck,
+  ShieldCheck, Wallet, FileCheck2, Banknote, Clock, ArrowRight, LogOut, BellRing, CreditCard, BadgeCheck, Lock,
 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
@@ -23,6 +23,7 @@ function Dashboard() {
   const navigate = useNavigate();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [email, setEmail] = useState<string>("");
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -35,6 +36,8 @@ function Dashboard() {
         .eq("id", u.user.id)
         .maybeSingle();
       if (data) setProfile(data as Profile);
+      const { data: roles } = await supabase.from("user_roles").select("role").eq("user_id", u.user.id);
+      setIsAdmin((roles ?? []).some((r) => r.role === "admin"));
     })();
   }, []);
 
@@ -61,6 +64,9 @@ function Dashboard() {
             <span className="font-semibold text-navy tracking-tight">LendFlow</span>
           </Link>
           <div className="flex items-center gap-4">
+            {isAdmin && (
+              <Link to="/admin/kyc" className="text-xs font-semibold uppercase tracking-wider text-emerald hover:underline">Admin</Link>
+            )}
             <button className="relative size-9 rounded-md hover:bg-surface-muted flex items-center justify-center text-muted-foreground">
               <BellRing className="size-4" />
               <span className="absolute top-2 right-2 size-1.5 rounded-full bg-emerald" />
