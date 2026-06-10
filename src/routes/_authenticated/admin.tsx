@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { ShieldCheck, Users, FileCheck2, Layers } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/admin")({
-  beforeLoad: async () => {
+  beforeLoad: async ({ location }) => {
     const { data: u } = await supabase.auth.getUser();
     if (!u.user) throw redirect({ to: "/auth" });
     const { data: roles } = await supabase
@@ -12,6 +12,7 @@ export const Route = createFileRoute("/_authenticated/admin")({
       .eq("user_id", u.user.id);
     const isAdmin = (roles ?? []).some((r) => r.role === "admin");
     if (!isAdmin) throw redirect({ to: "/dashboard" });
+    if (location.pathname === "/admin") throw redirect({ to: "/admin/kyc" });
   },
   component: AdminLayout,
 });
