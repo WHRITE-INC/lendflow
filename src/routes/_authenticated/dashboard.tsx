@@ -23,6 +23,7 @@ function Dashboard() {
   const navigate = useNavigate();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [email, setEmail] = useState<string>("");
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -35,6 +36,8 @@ function Dashboard() {
         .eq("id", u.user.id)
         .maybeSingle();
       if (data) setProfile(data as Profile);
+      const { data: roles } = await supabase.from("user_roles").select("role").eq("user_id", u.user.id);
+      setIsAdmin((roles ?? []).some((r) => r.role === "admin"));
     })();
   }, []);
 
@@ -61,6 +64,9 @@ function Dashboard() {
             <span className="font-semibold text-navy tracking-tight">LendFlow</span>
           </Link>
           <div className="flex items-center gap-4">
+            {isAdmin && (
+              <Link to="/admin/kyc" className="text-xs font-semibold uppercase tracking-wider text-emerald hover:underline">Admin</Link>
+            )}
             <button className="relative size-9 rounded-md hover:bg-surface-muted flex items-center justify-center text-muted-foreground">
               <BellRing className="size-4" />
               <span className="absolute top-2 right-2 size-1.5 rounded-full bg-emerald" />
@@ -110,13 +116,16 @@ function Dashboard() {
               status={completion === 100 ? "done" : "in-progress"}
               desc="Add your NRC, address and contact details."
             />
-            <Step
-              icon={ShieldCheck}
-              n="02"
-              title="Verify identity (KYC)"
-              status={statusFromKyc(kyc)}
-              desc="Upload your National ID and a selfie."
-            />
+            <Link to="/kyc" className="contents">
+              <Step
+                icon={ShieldCheck}
+                n="02"
+                title="Verify identity (KYC)"
+                status={statusFromKyc(kyc)}
+                desc="Upload your National ID and a selfie."
+                interactive
+              />
+            </Link>
             <Step
               icon={BadgeCheck}
               n="03"
@@ -195,17 +204,17 @@ function Kpi({ icon: Icon, label, value, hint }: { icon: React.ComponentType<{ c
 }
 
 function Step({
-  icon: Icon, n, title, desc, status,
+  icon: Icon, n, title, desc, status, interactive,
 }: {
   icon: React.ComponentType<{ className?: string }>;
-  n: string; title: string; desc: string; status: "done" | "in-progress" | "todo";
+  n: string; title: string; desc: string; status: "done" | "in-progress" | "todo"; interactive?: boolean;
 }) {
   const badge =
     status === "done" ? { text: "Done", cls: "bg-emerald/10 text-emerald" }
     : status === "in-progress" ? { text: "In progress", cls: "bg-amber-50 text-amber-700" }
     : { text: "To do", cls: "bg-surface-muted text-muted-foreground" };
   return (
-    <div className="p-6 ring-1 ring-black/5 bg-surface flex flex-col gap-4">
+    <div className={`p-6 ring-1 ring-black/5 bg-surface flex flex-col gap-4 ${interactive ? "hover:bg-surface-muted cursor-pointer transition-colors" : ""}`}>
       <div className="flex items-center justify-between">
         <span className="text-xs font-mono text-muted-foreground">{n}</span>
         <span className={`text-[10px] uppercase tracking-wider font-semibold px-2 py-1 rounded-full ${badge.cls}`}>{badge.text}</span>
