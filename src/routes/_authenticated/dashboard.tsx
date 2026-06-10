@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import {
-  ShieldCheck, Wallet, FileCheck2, Banknote, Clock, ArrowRight, LogOut, BellRing, CreditCard, BadgeCheck, Lock,
+  ShieldCheck, Wallet, FileCheck2, Banknote, Clock, ArrowRight, LogOut, BellRing, CreditCard, BadgeCheck,
 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
