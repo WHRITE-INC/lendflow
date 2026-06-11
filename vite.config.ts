@@ -16,7 +16,7 @@ function getNitroPreset() {
     return "netlify";
   }
 
-  return "cloudflare";
+  return "netlify";
 }
 
 export default defineConfig({

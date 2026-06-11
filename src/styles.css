@@ -154,3 +154,36 @@
     text-rendering: optimizeLegibility;
   }
 }
+
+@layer utilities {
+  .lendflow-float {
+    animation: lendflow-float 4s ease-in-out infinite;
+  }
+
+  .lendflow-float-slow {
+    animation: lendflow-float 6s ease-in-out infinite;
+  }
+
+  .lendflow-grid {
+    background-image:
+      linear-gradient(to right, oklch(0.232 0.072 263 / 7%) 1px, transparent 1px),
+      linear-gradient(to bottom, oklch(0.232 0.072 263 / 7%) 1px, transparent 1px);
+    background-size: 36px 36px;
+  }
+
+  .lendflow-dots {
+    background-image: radial-gradient(oklch(1 0 0 / 18%) 1px, transparent 1px);
+    background-size: 18px 18px;
+  }
+}
+
+@keyframes lendflow-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-16px);
+  }
+}
