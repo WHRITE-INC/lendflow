@@ -53,6 +53,60 @@ export type Database = {
         }
         Relationships: []
       }
+      loan_tiers: {
+        Row: {
+          activation_fee: number
+          created_at: string
+          description: string | null
+          eligibility_rules: Json
+          id: string
+          interest_rate: number
+          is_active: boolean
+          max_amount: number
+          max_term_months: number
+          min_amount: number
+          min_term_months: number
+          name: string
+          processing_fee: number
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          activation_fee?: number
+          created_at?: string
+          description?: string | null
+          eligibility_rules?: Json
+          id?: string
+          interest_rate: number
+          is_active?: boolean
+          max_amount: number
+          max_term_months: number
+          min_amount: number
+          min_term_months: number
+          name: string
+          processing_fee?: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          activation_fee?: number
+          created_at?: string
+          description?: string | null
+          eligibility_rules?: Json
+          id?: string
+          interest_rate?: number
+          is_active?: boolean
+          max_amount?: number
+          max_term_months?: number
+          min_amount?: number
+          min_term_months?: number
+          name?: string
+          processing_fee?: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           activation_status: string
@@ -68,6 +122,7 @@ export type Database = {
           national_id: string | null
           phone: string | null
           province: string | null
+          tier_id: string | null
           updated_at: string
         }
         Insert: {
@@ -84,6 +139,7 @@ export type Database = {
           national_id?: string | null
           phone?: string | null
           province?: string | null
+          tier_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -100,9 +156,18 @@ export type Database = {
           national_id?: string | null
           phone?: string | null
           province?: string | null
+          tier_id?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_tier_id_fkey"
+            columns: ["tier_id"]
+            isOneToOne: false
+            referencedRelation: "loan_tiers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
