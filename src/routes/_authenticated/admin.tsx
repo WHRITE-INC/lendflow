@@ -28,7 +28,8 @@ function AdminLayout() {
           </Link>
           <nav className="flex items-center gap-1 text-sm">
             <NavLink to="/admin/kyc" icon={FileCheck2} label="KYC" />
-            <span className="text-navy-foreground/30 px-2 text-xs">Tiers · Loans · Users (coming soon)</span>
+            <NavLink to="/admin/tiers" icon={Layers} label="Loan tiers" />
+            <span className="text-navy-foreground/30 px-2 text-xs">Loans · Users (coming soon)</span>
           </nav>
           <Link to="/dashboard" className="text-xs text-navy-foreground/60 hover:text-navy-foreground">Exit admin</Link>
         </div>
@@ -53,4 +54,4 @@ function NavLink({ to, icon: Icon, label }: { to: string; icon: React.ComponentT
 }
 
 // satisfy lint for unused imports if tree-shaken
-void Users; void Layers;
+void Users;
