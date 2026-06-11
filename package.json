@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "vite dev",
     "build": "vite build",
+    "build:vercel": "DEPLOY_TARGET=vercel vite build",
+    "build:netlify": "DEPLOY_TARGET=netlify vite build",
     "build:dev": "vite build --mode development",
     "preview": "vite preview",
     "lint": "eslint .",
