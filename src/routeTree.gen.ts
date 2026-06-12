@@ -19,6 +19,7 @@ import { Route as AuthenticatedDashboardRouteImport } from './routes/_authentica
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedAdminTiersRouteImport } from './routes/_authenticated/admin.tiers'
 import { Route as AuthenticatedAdminKycRouteImport } from './routes/_authenticated/admin.kyc'
+import { Route as AuthenticatedAdminEligibilityRouteImport } from './routes/_authenticated/admin.eligibility'
 
 const LoansCalculatorRoute = LoansCalculatorRouteImport.update({
   id: '/loans-calculator',
@@ -70,6 +71,12 @@ const AuthenticatedAdminKycRoute = AuthenticatedAdminKycRouteImport.update({
   path: '/kyc',
   getParentRoute: () => AuthenticatedAdminRoute,
 } as any)
+const AuthenticatedAdminEligibilityRoute =
+  AuthenticatedAdminEligibilityRouteImport.update({
+    id: '/eligibility',
+    path: '/eligibility',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -79,6 +86,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/eligibility': typeof AuthenticatedEligibilityRoute
   '/kyc': typeof AuthenticatedKycRoute
+  '/admin/eligibility': typeof AuthenticatedAdminEligibilityRoute
   '/admin/kyc': typeof AuthenticatedAdminKycRoute
   '/admin/tiers': typeof AuthenticatedAdminTiersRoute
 }
@@ -90,6 +98,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/eligibility': typeof AuthenticatedEligibilityRoute
   '/kyc': typeof AuthenticatedKycRoute
+  '/admin/eligibility': typeof AuthenticatedAdminEligibilityRoute
   '/admin/kyc': typeof AuthenticatedAdminKycRoute
   '/admin/tiers': typeof AuthenticatedAdminTiersRoute
 }
@@ -103,6 +112,7 @@ export interface FileRoutesById {
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/eligibility': typeof AuthenticatedEligibilityRoute
   '/_authenticated/kyc': typeof AuthenticatedKycRoute
+  '/_authenticated/admin/eligibility': typeof AuthenticatedAdminEligibilityRoute
   '/_authenticated/admin/kyc': typeof AuthenticatedAdminKycRoute
   '/_authenticated/admin/tiers': typeof AuthenticatedAdminTiersRoute
 }
@@ -116,6 +126,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/eligibility'
     | '/kyc'
+    | '/admin/eligibility'
     | '/admin/kyc'
     | '/admin/tiers'
   fileRoutesByTo: FileRoutesByTo
@@ -127,6 +138,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/eligibility'
     | '/kyc'
+    | '/admin/eligibility'
     | '/admin/kyc'
     | '/admin/tiers'
   id:
@@ -139,6 +151,7 @@ export interface FileRouteTypes {
     | '/_authenticated/dashboard'
     | '/_authenticated/eligibility'
     | '/_authenticated/kyc'
+    | '/_authenticated/admin/eligibility'
     | '/_authenticated/admin/kyc'
     | '/_authenticated/admin/tiers'
   fileRoutesById: FileRoutesById
@@ -222,15 +235,24 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminKycRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/eligibility': {
+      id: '/_authenticated/admin/eligibility'
+      path: '/eligibility'
+      fullPath: '/admin/eligibility'
+      preLoaderRoute: typeof AuthenticatedAdminEligibilityRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
   }
 }
 
 interface AuthenticatedAdminRouteChildren {
+  AuthenticatedAdminEligibilityRoute: typeof AuthenticatedAdminEligibilityRoute
   AuthenticatedAdminKycRoute: typeof AuthenticatedAdminKycRoute
   AuthenticatedAdminTiersRoute: typeof AuthenticatedAdminTiersRoute
 }
 
 const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
+  AuthenticatedAdminEligibilityRoute: AuthenticatedAdminEligibilityRoute,
   AuthenticatedAdminKycRoute: AuthenticatedAdminKycRoute,
   AuthenticatedAdminTiersRoute: AuthenticatedAdminTiersRoute,
 }
