@@ -146,12 +146,20 @@ function Dashboard() {
                 Once your account is activated, apply for a loan in under 60 seconds. Funds are disbursed straight to your mobile money wallet.
               </p>
             </div>
-            <button
-              disabled={activation !== "active" || kyc !== "approved"}
-              className="self-start bg-emerald text-emerald-foreground py-3 px-6 rounded-lg font-medium text-sm hover:bg-emerald/90 transition-colors disabled:opacity-50 inline-flex items-center gap-2"
-            >
-              Apply for a loan <ArrowRight className="size-4" />
-            </button>
+            <div className="flex flex-wrap gap-3">
+              <button
+                disabled={activation !== "active" || kyc !== "approved"}
+                className="self-start bg-emerald text-emerald-foreground py-3 px-6 rounded-lg font-medium text-sm hover:bg-emerald/90 transition-colors disabled:opacity-50 inline-flex items-center gap-2"
+              >
+                Apply for a loan <ArrowRight className="size-4" />
+              </button>
+              <Link
+                to="/eligibility"
+                className="self-start py-3 px-6 rounded-lg font-medium text-sm border border-emerald/40 text-emerald hover:bg-emerald/10 transition-colors inline-flex items-center gap-2"
+              >
+                Check eligibility <ArrowRight className="size-4" />
+              </Link>
+            </div>
           </div>
           <div className="bg-card ring-1 ring-black/5 rounded-2xl p-8 space-y-4">
             <h3 className="font-medium text-navy">Recent Activity</h3>
