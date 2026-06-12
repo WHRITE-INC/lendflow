@@ -36,6 +36,13 @@ type Tier = {
   activation_fee: number;
   is_active: boolean;
   sort_order: number;
+  max_active_loans: number;
+  max_outstanding_principal: number | null;
+  min_repayment_frequency_days: number;
+  max_repayment_frequency_days: number;
+  min_age: number;
+  required_kyc_status: string;
+  required_activation_status: string;
 };
 
 type Draft = Omit<Tier, "id"> & { id?: string };
@@ -52,6 +59,13 @@ const emptyDraft: Draft = {
   activation_fee: 0,
   is_active: true,
   sort_order: 0,
+  max_active_loans: 1,
+  max_outstanding_principal: null,
+  min_repayment_frequency_days: 7,
+  max_repayment_frequency_days: 31,
+  min_age: 18,
+  required_kyc_status: "approved",
+  required_activation_status: "active",
 };
 
 const fmt = (n: number) =>
@@ -69,7 +83,7 @@ function AdminTiers() {
     const { data, error } = await supabase
       .from("loan_tiers")
       .select(
-        "id,name,description,min_amount,max_amount,min_term_months,max_term_months,interest_rate,processing_fee,activation_fee,is_active,sort_order",
+        "id,name,description,min_amount,max_amount,min_term_months,max_term_months,interest_rate,processing_fee,activation_fee,is_active,sort_order,max_active_loans,max_outstanding_principal,min_repayment_frequency_days,max_repayment_frequency_days,min_age,required_kyc_status,required_activation_status",
       )
       .order("sort_order", { ascending: true })
       .order("created_at", { ascending: true });
@@ -108,6 +122,16 @@ function AdminTiers() {
       activation_fee: Number(draft.activation_fee),
       is_active: draft.is_active,
       sort_order: Number(draft.sort_order),
+      max_active_loans: Number(draft.max_active_loans),
+      max_outstanding_principal:
+        draft.max_outstanding_principal === null || Number.isNaN(Number(draft.max_outstanding_principal))
+          ? null
+          : Number(draft.max_outstanding_principal),
+      min_repayment_frequency_days: Number(draft.min_repayment_frequency_days),
+      max_repayment_frequency_days: Number(draft.max_repayment_frequency_days),
+      min_age: Number(draft.min_age),
+      required_kyc_status: draft.required_kyc_status,
+      required_activation_status: draft.required_activation_status,
     };
     const { error } = draft.id
       ? await supabase.from("loan_tiers").update(payload).eq("id", draft.id)
@@ -195,7 +219,14 @@ function AdminTiers() {
                   <Stat label="Interest" value={`${t.interest_rate}% / mo`} />
                   <Stat label="Processing" value={`K ${fmt(t.processing_fee)}`} />
                   <Stat label="Activation" value={`K ${fmt(t.activation_fee)}`} />
-                  <Stat label="Order" value={`#${t.sort_order}`} />
+                  <Stat label="Max active" value={`${t.max_active_loans} loan${t.max_active_loans === 1 ? "" : "s"}`} />
+                  <Stat
+                    label="Outstanding cap"
+                    value={t.max_outstanding_principal == null ? "None" : `K ${fmt(t.max_outstanding_principal)}`}
+                  />
+                  <Stat label="Repay every" value={`${t.min_repayment_frequency_days}–${t.max_repayment_frequency_days} days`} />
+                  <Stat label="Min age" value={`${t.min_age}`} />
+                  <Stat label="Requires" value={`KYC ${t.required_kyc_status}`} />
                 </dl>
                 <div className="flex flex-wrap items-center gap-2 border-t border-hairline pt-3">
                   <Button size="sm" variant="outline" onClick={() => openEdit(t)}>
@@ -291,6 +322,62 @@ function AdminTiers() {
                 type="number"
                 value={draft.activation_fee}
                 onChange={(e) => setDraft({ ...draft, activation_fee: Number(e.target.value) })}
+              />
+            </Field>
+            <Field label="Max active loans per borrower">
+              <Input
+                type="number"
+                min={1}
+                value={draft.max_active_loans}
+                onChange={(e) => setDraft({ ...draft, max_active_loans: Number(e.target.value) })}
+              />
+            </Field>
+            <Field label="Outstanding principal cap (K, blank = no cap)">
+              <Input
+                type="number"
+                value={draft.max_outstanding_principal ?? ""}
+                onChange={(e) =>
+                  setDraft({
+                    ...draft,
+                    max_outstanding_principal: e.target.value === "" ? null : Number(e.target.value),
+                  })
+                }
+              />
+            </Field>
+            <Field label="Min repayment frequency (days)">
+              <Input
+                type="number"
+                min={1}
+                value={draft.min_repayment_frequency_days}
+                onChange={(e) => setDraft({ ...draft, min_repayment_frequency_days: Number(e.target.value) })}
+              />
+            </Field>
+            <Field label="Max repayment frequency (days)">
+              <Input
+                type="number"
+                min={1}
+                value={draft.max_repayment_frequency_days}
+                onChange={(e) => setDraft({ ...draft, max_repayment_frequency_days: Number(e.target.value) })}
+              />
+            </Field>
+            <Field label="Minimum age">
+              <Input
+                type="number"
+                min={18}
+                value={draft.min_age}
+                onChange={(e) => setDraft({ ...draft, min_age: Number(e.target.value) })}
+              />
+            </Field>
+            <Field label="Required KYC status">
+              <Input
+                value={draft.required_kyc_status}
+                onChange={(e) => setDraft({ ...draft, required_kyc_status: e.target.value })}
+              />
+            </Field>
+            <Field label="Required activation status">
+              <Input
+                value={draft.required_activation_status}
+                onChange={(e) => setDraft({ ...draft, required_activation_status: e.target.value })}
               />
             </Field>
             <div className="col-span-2 flex items-center justify-between rounded-lg border border-hairline p-3">

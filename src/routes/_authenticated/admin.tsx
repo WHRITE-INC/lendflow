@@ -1,6 +1,6 @@
 import { createFileRoute, Outlet, Link, redirect } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
-import { ShieldCheck, Users, FileCheck2, Layers } from "lucide-react";
+import { ShieldCheck, Users, FileCheck2, Layers, Sparkles } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   beforeLoad: async ({ location }) => {
@@ -29,6 +29,7 @@ function AdminLayout() {
           <nav className="flex items-center gap-1 text-sm">
             <NavLink to="/admin/kyc" icon={FileCheck2} label="KYC" />
             <NavLink to="/admin/tiers" icon={Layers} label="Loan tiers" />
+            <NavLink to="/admin/eligibility" icon={Sparkles} label="Eligibility" />
             <span className="text-navy-foreground/30 px-2 text-xs">Loans · Users (coming soon)</span>
           </nav>
           <Link to="/dashboard" className="text-xs text-navy-foreground/60 hover:text-navy-foreground">Exit admin</Link>
