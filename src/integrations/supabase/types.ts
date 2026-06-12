@@ -62,12 +62,19 @@ export type Database = {
           id: string
           interest_rate: number
           is_active: boolean
+          max_active_loans: number
           max_amount: number
+          max_outstanding_principal: number | null
+          max_repayment_frequency_days: number
           max_term_months: number
+          min_age: number
           min_amount: number
+          min_repayment_frequency_days: number
           min_term_months: number
           name: string
           processing_fee: number
+          required_activation_status: string
+          required_kyc_status: string
           sort_order: number
           updated_at: string
         }
@@ -79,12 +86,19 @@ export type Database = {
           id?: string
           interest_rate: number
           is_active?: boolean
+          max_active_loans?: number
           max_amount: number
+          max_outstanding_principal?: number | null
+          max_repayment_frequency_days?: number
           max_term_months: number
+          min_age?: number
           min_amount: number
+          min_repayment_frequency_days?: number
           min_term_months: number
           name: string
           processing_fee?: number
+          required_activation_status?: string
+          required_kyc_status?: string
           sort_order?: number
           updated_at?: string
         }
@@ -96,16 +110,79 @@ export type Database = {
           id?: string
           interest_rate?: number
           is_active?: boolean
+          max_active_loans?: number
           max_amount?: number
+          max_outstanding_principal?: number | null
+          max_repayment_frequency_days?: number
           max_term_months?: number
+          min_age?: number
           min_amount?: number
+          min_repayment_frequency_days?: number
           min_term_months?: number
           name?: string
           processing_fee?: number
+          required_activation_status?: string
+          required_kyc_status?: string
           sort_order?: number
           updated_at?: string
         }
         Relationships: []
+      }
+      loans: {
+        Row: {
+          created_at: string
+          disbursed_at: string | null
+          due_at: string | null
+          id: string
+          interest_rate: number
+          outstanding_principal: number
+          principal: number
+          repayment_frequency_days: number
+          status: string
+          term_months: number
+          tier_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          disbursed_at?: string | null
+          due_at?: string | null
+          id?: string
+          interest_rate: number
+          outstanding_principal: number
+          principal: number
+          repayment_frequency_days: number
+          status?: string
+          term_months: number
+          tier_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          disbursed_at?: string | null
+          due_at?: string | null
+          id?: string
+          interest_rate?: number
+          outstanding_principal?: number
+          principal?: number
+          repayment_frequency_days?: number
+          status?: string
+          term_months?: number
+          tier_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "loans_tier_id_fkey"
+            columns: ["tier_id"]
+            isOneToOne: false
+            referencedRelation: "loan_tiers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
@@ -195,6 +272,17 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      evaluate_tier_eligibility: {
+        Args: { _user_id: string }
+        Returns: {
+          active_loan_count: number
+          eligible: boolean
+          outstanding_principal: number
+          reasons: string[]
+          tier_id: string
+          tier_name: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
