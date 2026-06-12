@@ -14,6 +14,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedKycRouteImport } from './routes/_authenticated/kyc'
+import { Route as AuthenticatedEligibilityRouteImport } from './routes/_authenticated/eligibility'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedAdminTiersRouteImport } from './routes/_authenticated/admin.tiers'
@@ -43,6 +44,12 @@ const AuthenticatedKycRoute = AuthenticatedKycRouteImport.update({
   path: '/kyc',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedEligibilityRoute =
+  AuthenticatedEligibilityRouteImport.update({
+    id: '/eligibility',
+    path: '/eligibility',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -70,6 +77,7 @@ export interface FileRoutesByFullPath {
   '/loans-calculator': typeof LoansCalculatorRoute
   '/admin': typeof AuthenticatedAdminRouteWithChildren
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/eligibility': typeof AuthenticatedEligibilityRoute
   '/kyc': typeof AuthenticatedKycRoute
   '/admin/kyc': typeof AuthenticatedAdminKycRoute
   '/admin/tiers': typeof AuthenticatedAdminTiersRoute
@@ -80,6 +88,7 @@ export interface FileRoutesByTo {
   '/loans-calculator': typeof LoansCalculatorRoute
   '/admin': typeof AuthenticatedAdminRouteWithChildren
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/eligibility': typeof AuthenticatedEligibilityRoute
   '/kyc': typeof AuthenticatedKycRoute
   '/admin/kyc': typeof AuthenticatedAdminKycRoute
   '/admin/tiers': typeof AuthenticatedAdminTiersRoute
@@ -92,6 +101,7 @@ export interface FileRoutesById {
   '/loans-calculator': typeof LoansCalculatorRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRouteWithChildren
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/_authenticated/eligibility': typeof AuthenticatedEligibilityRoute
   '/_authenticated/kyc': typeof AuthenticatedKycRoute
   '/_authenticated/admin/kyc': typeof AuthenticatedAdminKycRoute
   '/_authenticated/admin/tiers': typeof AuthenticatedAdminTiersRoute
@@ -104,6 +114,7 @@ export interface FileRouteTypes {
     | '/loans-calculator'
     | '/admin'
     | '/dashboard'
+    | '/eligibility'
     | '/kyc'
     | '/admin/kyc'
     | '/admin/tiers'
@@ -114,6 +125,7 @@ export interface FileRouteTypes {
     | '/loans-calculator'
     | '/admin'
     | '/dashboard'
+    | '/eligibility'
     | '/kyc'
     | '/admin/kyc'
     | '/admin/tiers'
@@ -125,6 +137,7 @@ export interface FileRouteTypes {
     | '/loans-calculator'
     | '/_authenticated/admin'
     | '/_authenticated/dashboard'
+    | '/_authenticated/eligibility'
     | '/_authenticated/kyc'
     | '/_authenticated/admin/kyc'
     | '/_authenticated/admin/tiers'
@@ -174,6 +187,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedKycRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/eligibility': {
+      id: '/_authenticated/eligibility'
+      path: '/eligibility'
+      fullPath: '/eligibility'
+      preLoaderRoute: typeof AuthenticatedEligibilityRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/dashboard': {
       id: '/_authenticated/dashboard'
       path: '/dashboard'
@@ -221,12 +241,14 @@ const AuthenticatedAdminRouteWithChildren =
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRouteWithChildren
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+  AuthenticatedEligibilityRoute: typeof AuthenticatedEligibilityRoute
   AuthenticatedKycRoute: typeof AuthenticatedKycRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminRoute: AuthenticatedAdminRouteWithChildren,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+  AuthenticatedEligibilityRoute: AuthenticatedEligibilityRoute,
   AuthenticatedKycRoute: AuthenticatedKycRoute,
 }
 
@@ -242,3 +264,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
