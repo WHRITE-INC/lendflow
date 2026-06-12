@@ -380,13 +380,6 @@ function AdminTiers() {
                 onChange={(e) => setDraft({ ...draft, required_activation_status: e.target.value })}
               />
             </Field>
-            <Field label="Sort order">
-              <Input
-                type="number"
-                value={draft.sort_order}
-                onChange={(e) => setDraft({ ...draft, sort_order: Number(e.target.value) })}
-              />
-            </Field>
             <div className="col-span-2 flex items-center justify-between rounded-lg border border-hairline p-3">
               <div>
                 <Label className="text-sm">Active</Label>
