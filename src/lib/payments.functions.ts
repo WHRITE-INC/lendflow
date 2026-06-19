@@ -7,6 +7,7 @@ import {
   requestAirtelMoneyPayment,
 } from "@/lib/airtel-money.server";
 import {
+  getMtnMomoConfig,
   getMtnMomoPaymentStatus,
   normalizeMomoMsisdn,
   requestMtnMomoPayment,
@@ -112,6 +113,17 @@ export const startMobileMoneyPackagePayment = createServerFn({ method: "POST" })
       throw new Error("The selected package does not have a valid fee");
     }
 
+    let paymentCurrency = pack.currency;
+    if (data.provider === "mtn_momo") {
+      const momoConfig = getMtnMomoConfig();
+      paymentCurrency = momoConfig.currency;
+      if (momoConfig.targetEnvironment !== "sandbox" && pack.currency !== paymentCurrency) {
+        throw new Error(
+          `This package is priced in ${pack.currency}, but MTN MoMo is configured for ${paymentCurrency}`,
+        );
+      }
+    }
+
     const referenceId = crypto.randomUUID();
     const externalId = `${data.provider}-${referenceId.slice(0, 8)}`;
 
@@ -124,7 +136,7 @@ export const startMobileMoneyPackagePayment = createServerFn({ method: "POST" })
         reference_id: referenceId,
         external_id: externalId,
         amount,
-        currency: pack.currency,
+        currency: paymentCurrency,
         phone,
         status: "pending",
       })
@@ -138,6 +150,7 @@ export const startMobileMoneyPackagePayment = createServerFn({ method: "POST" })
           referenceId,
           externalId,
           amount,
+          currency: paymentCurrency,
           phone,
           payerMessage: "LendFlow promotion package",
           payeeNote: `Promotion fee for ${pack.name}`,
@@ -173,7 +186,7 @@ export const startMobileMoneyPackagePayment = createServerFn({ method: "POST" })
       packageId: pack.id,
       provider: data.provider,
       amount,
-      currency: pack.currency,
+      currency: paymentCurrency,
       status: "pending",
       phone,
     };
@@ -229,7 +242,10 @@ export const checkMobileMoneyPackagePayment = createServerFn({ method: "POST" })
       .update({
         status,
         provider_status: rawStatus,
-        reason: "reason" in providerStatus ? providerStatus.reason ?? null : providerStatus.message ?? null,
+        reason:
+          "reason" in providerStatus
+            ? (providerStatus.reason ?? null)
+            : (providerStatus.message ?? null),
         raw_response: providerStatus,
         completed_at: status === "pending" ? null : new Date().toISOString(),
       })

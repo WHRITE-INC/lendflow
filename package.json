@@ -9,6 +9,7 @@
     "build:vercel": "DEPLOY_TARGET=vercel vite build",
     "build:netlify": "DEPLOY_TARGET=netlify vite build",
     "build:dev": "vite build --mode development",
+    "mtn:setup": "node scripts/setup-mtn-momo-sandbox.mjs",
     "preview": "vite preview",
     "lint": "eslint .",
     "format": "prettier --write ."
