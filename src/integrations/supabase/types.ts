@@ -192,6 +192,7 @@ export type Database = {
           currency: string
           external_id: string
           id: string
+          package_id: string | null
           phone: string
           provider: string
           provider_status: string | null
@@ -199,7 +200,6 @@ export type Database = {
           reason: string | null
           reference_id: string
           status: string
-          tier_id: string | null
           updated_at: string
           user_id: string
         }
@@ -210,6 +210,7 @@ export type Database = {
           currency?: string
           external_id: string
           id?: string
+          package_id?: string | null
           phone: string
           provider?: string
           provider_status?: string | null
@@ -217,7 +218,6 @@ export type Database = {
           reason?: string | null
           reference_id: string
           status?: string
-          tier_id?: string | null
           updated_at?: string
           user_id: string
         }
@@ -228,6 +228,7 @@ export type Database = {
           currency?: string
           external_id?: string
           id?: string
+          package_id?: string | null
           phone?: string
           provider?: string
           provider_status?: string | null
@@ -235,19 +236,75 @@ export type Database = {
           reason?: string | null
           reference_id?: string
           status?: string
-          tier_id?: string | null
           updated_at?: string
           user_id?: string
         }
         Relationships: [
           {
-            foreignKeyName: "mobile_money_payments_tier_id_fkey"
-            columns: ["tier_id"]
+            foreignKeyName: "mobile_money_payments_package_id_fkey"
+            columns: ["package_id"]
             isOneToOne: false
-            referencedRelation: "loan_tiers"
+            referencedRelation: "promotion_packages"
             referencedColumns: ["id"]
           },
         ]
+      }
+      promotion_packages: {
+        Row: {
+          accent: string
+          badge: string | null
+          created_at: string
+          currency: string
+          description: string | null
+          fee_amount: number
+          headline: string
+          id: string
+          is_active: boolean
+          name: string
+          original_currency: string | null
+          original_fee_amount: number | null
+          original_qualification_amount: number | null
+          qualification_amount: number
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          accent?: string
+          badge?: string | null
+          created_at?: string
+          currency?: string
+          description?: string | null
+          fee_amount: number
+          headline: string
+          id?: string
+          is_active?: boolean
+          name: string
+          original_currency?: string | null
+          original_fee_amount?: number | null
+          original_qualification_amount?: number | null
+          qualification_amount: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          accent?: string
+          badge?: string | null
+          created_at?: string
+          currency?: string
+          description?: string | null
+          fee_amount?: number
+          headline?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          original_currency?: string | null
+          original_fee_amount?: number | null
+          original_qualification_amount?: number | null
+          qualification_amount?: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
       }
       profiles: {
         Row: {

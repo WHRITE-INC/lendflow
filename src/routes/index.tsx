@@ -26,13 +26,13 @@ export const Route = createFileRoute("/")({
       {
         name: "description",
         content:
-          "Register, verify your identity, activate your account, and access affordable digital loans direct to your mobile money wallet.",
+          "Register, verify your identity, choose a promotion package, and access affordable digital loans direct to your mobile money wallet.",
       },
       { property: "og:title", content: "LendFlow Zambia — Fast Mobile Money Loans" },
       {
         property: "og:description",
         content:
-          "Register, verify your identity, activate your account, and access affordable digital loans direct to your mobile money wallet.",
+          "Register, verify your identity, choose a promotion package, and access affordable digital loans direct to your mobile money wallet.",
       },
     ],
   }),
@@ -177,8 +177,8 @@ const steps = [
   },
   {
     n: "03",
-    title: "Activate Membership",
-    desc: "Pay a one-time activation fee to unlock your loan tier.",
+    title: "Choose Package",
+    desc: "Select a promotion package and pay securely by MTN MoMo or Airtel Money.",
   },
   { n: "04", title: "Apply For Loan", desc: "Choose your amount, purpose and repayment term." },
   {

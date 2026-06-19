@@ -2,15 +2,36 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import {
-  getMtnMomoConfig,
+  getAirtelMoneyPaymentStatus,
+  normalizeAirtelMsisdn,
+  requestAirtelMoneyPayment,
+} from "@/lib/airtel-money.server";
+import {
   getMtnMomoPaymentStatus,
   normalizeMomoMsisdn,
   requestMtnMomoPayment,
 } from "@/lib/mtn-momo.server";
 
-export type ActivationPaymentResult = {
+const providerSchema = z.enum(["mtn_momo", "airtel_money"]);
+type PaymentProvider = z.infer<typeof providerSchema>;
+
+export type PromotionPackage = {
+  id: string;
+  name: string;
+  headline: string;
+  badge: string | null;
+  accent: string;
+  description: string | null;
+  qualificationAmount: number;
+  feeAmount: number;
+  currency: string;
+};
+
+export type PackagePaymentResult = {
   paymentId: string;
   referenceId: string;
+  packageId: string | null;
+  provider: PaymentProvider;
   amount: number;
   currency: string;
   status: "pending" | "successful" | "failed";
@@ -19,64 +40,91 @@ export type ActivationPaymentResult = {
 
 function assertValidMsisdn(phone: string) {
   if (!/^\d{9,15}$/.test(phone)) {
-    throw new Error("Enter the MTN number in international format, for example 260971234567");
+    throw new Error("Enter the phone number in international format, for example 260971234567");
   }
 }
 
-export const startMtnMomoActivationPayment = createServerFn({ method: "POST" })
+function normalizePhone(provider: PaymentProvider, phone: string) {
+  const normalized =
+    provider === "mtn_momo" ? normalizeMomoMsisdn(phone) : normalizeAirtelMsisdn(phone);
+  assertValidMsisdn(normalized);
+  return normalized;
+}
+
+export const getPromotionPackages = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(z.object({ phone: z.string().min(1).optional() }))
-  .handler(async ({ data, context }): Promise<ActivationPaymentResult> => {
+  .inputValidator(z.object({}))
+  .handler(async ({ context }): Promise<PromotionPackage[]> => {
+    const { data, error } = await context.supabase
+      .from("promotion_packages")
+      .select("id,name,headline,badge,accent,description,qualification_amount,fee_amount,currency")
+      .eq("is_active", true)
+      .order("sort_order", { ascending: true });
+    if (error) throw new Error(error.message);
+
+    return (data ?? []).map((row) => ({
+      id: row.id,
+      name: row.name,
+      headline: row.headline,
+      badge: row.badge,
+      accent: row.accent,
+      description: row.description,
+      qualificationAmount: Number(row.qualification_amount),
+      feeAmount: Number(row.fee_amount),
+      currency: row.currency,
+    }));
+  });
+
+export const startMobileMoneyPackagePayment = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    z.object({
+      packageId: z.string().uuid(),
+      provider: providerSchema,
+      phone: z.string().min(1),
+    }),
+  )
+  .handler(async ({ data, context }): Promise<PackagePaymentResult> => {
     const { supabase, userId } = context;
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
+    const phone = normalizePhone(data.provider, data.phone);
     const { data: profile, error: profileError } = await supabase
       .from("profiles")
-      .select("phone,activation_status,tier_id")
+      .select("kyc_status")
       .eq("id", userId)
       .single();
     if (profileError) throw new Error(profileError.message);
-    if (profile.activation_status === "active") {
-      throw new Error("Your account is already active");
+    if (profile.kyc_status !== "approved") {
+      throw new Error("Complete KYC approval before choosing a promotion package");
     }
 
-    const rawPhone = data.phone ?? profile.phone;
-    if (!rawPhone) throw new Error("Add an MTN phone number before paying");
-    const phone = normalizeMomoMsisdn(rawPhone);
-    assertValidMsisdn(phone);
-
-    let tierQuery = supabase
-      .from("loan_tiers")
-      .select("id,name,activation_fee")
+    const { data: pack, error: packageError } = await supabase
+      .from("promotion_packages")
+      .select("id,name,fee_amount,currency")
+      .eq("id", data.packageId)
       .eq("is_active", true)
-      .order("sort_order", { ascending: true })
-      .limit(1);
+      .single();
+    if (packageError) throw new Error(packageError.message);
 
-    if (profile.tier_id) tierQuery = tierQuery.eq("id", profile.tier_id);
-
-    const { data: tiers, error: tierError } = await tierQuery;
-    if (tierError) throw new Error(tierError.message);
-    const tier = tiers?.[0];
-    if (!tier) throw new Error("No active activation tier is configured");
-
-    const amount = Number(tier.activation_fee);
+    const amount = Number(pack.fee_amount);
     if (!Number.isFinite(amount) || amount <= 0) {
-      throw new Error("The selected tier does not have an activation fee configured");
+      throw new Error("The selected package does not have a valid fee");
     }
 
     const referenceId = crypto.randomUUID();
-    const externalId = `activation-${referenceId.slice(0, 8)}`;
-    const currency = getMtnMomoConfig().currency;
+    const externalId = `${data.provider}-${referenceId.slice(0, 8)}`;
 
     const { data: payment, error: insertError } = await supabaseAdmin
       .from("mobile_money_payments")
       .insert({
         user_id: userId,
-        tier_id: tier.id,
+        package_id: pack.id,
+        provider: data.provider,
         reference_id: referenceId,
         external_id: externalId,
         amount,
-        currency,
+        currency: pack.currency,
         phone,
         status: "pending",
       })
@@ -85,21 +133,30 @@ export const startMtnMomoActivationPayment = createServerFn({ method: "POST" })
     if (insertError) throw new Error(insertError.message);
 
     try {
-      await requestMtnMomoPayment({
-        referenceId,
-        externalId,
-        amount,
-        phone,
-        payerMessage: "LendFlow activation",
-        payeeNote: `Activation fee for ${tier.name}`,
-      });
+      if (data.provider === "mtn_momo") {
+        await requestMtnMomoPayment({
+          referenceId,
+          externalId,
+          amount,
+          phone,
+          payerMessage: "LendFlow promotion package",
+          payeeNote: `Promotion fee for ${pack.name}`,
+        });
+      } else {
+        await requestAirtelMoneyPayment({
+          referenceId,
+          externalId,
+          amount,
+          phone,
+        });
+      }
     } catch (error) {
       await supabaseAdmin
         .from("mobile_money_payments")
         .update({
           status: "failed",
           provider_status: "REQUEST_FAILED",
-          reason: error instanceof Error ? error.message : "MTN MoMo request failed",
+          reason: error instanceof Error ? error.message : "Mobile money request failed",
         })
         .eq("id", payment.id);
       throw error;
@@ -107,29 +164,31 @@ export const startMtnMomoActivationPayment = createServerFn({ method: "POST" })
 
     await supabaseAdmin
       .from("profiles")
-      .update({ phone, activation_status: "pending", tier_id: tier.id })
+      .update({ phone, activation_status: "pending" })
       .eq("id", userId);
 
     return {
       paymentId: payment.id,
       referenceId,
+      packageId: pack.id,
+      provider: data.provider,
       amount,
-      currency,
+      currency: pack.currency,
       status: "pending",
       phone,
     };
   });
 
-export const checkMtnMomoActivationPayment = createServerFn({ method: "POST" })
+export const checkMobileMoneyPackagePayment = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(z.object({ paymentId: z.string().uuid() }))
-  .handler(async ({ data, context }): Promise<ActivationPaymentResult> => {
+  .handler(async ({ data, context }): Promise<PackagePaymentResult> => {
     const { supabase, userId } = context;
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     const { data: payment, error } = await supabase
       .from("mobile_money_payments")
-      .select("id,reference_id,amount,currency,phone,status")
+      .select("id,reference_id,external_id,package_id,provider,amount,currency,phone,status")
       .eq("id", data.paymentId)
       .eq("user_id", userId)
       .single();
@@ -139,6 +198,8 @@ export const checkMtnMomoActivationPayment = createServerFn({ method: "POST" })
       return {
         paymentId: payment.id,
         referenceId: payment.reference_id,
+        packageId: payment.package_id,
+        provider: payment.provider as PaymentProvider,
         amount: Number(payment.amount),
         currency: payment.currency,
         status: payment.status as "successful" | "failed",
@@ -146,25 +207,32 @@ export const checkMtnMomoActivationPayment = createServerFn({ method: "POST" })
       };
     }
 
-    const momoStatus = await getMtnMomoPaymentStatus(payment.reference_id);
+    const provider = payment.provider as PaymentProvider;
+    const providerStatus =
+      provider === "mtn_momo"
+        ? await getMtnMomoPaymentStatus(payment.reference_id)
+        : await getAirtelMoneyPaymentStatus(payment.external_id);
+
+    const rawStatus =
+      "status" in providerStatus && typeof providerStatus.status === "string"
+        ? providerStatus.status
+        : "PENDING";
     const status =
-      momoStatus.status === "SUCCESSFUL"
+      rawStatus === "SUCCESSFUL" || rawStatus === "SUCCESS" || rawStatus === "TS"
         ? "successful"
-        : momoStatus.status === "FAILED"
+        : rawStatus === "FAILED" || rawStatus === "TF"
           ? "failed"
           : "pending";
 
-    const update = {
-      status,
-      provider_status: momoStatus.status,
-      reason: momoStatus.reason ?? null,
-      raw_response: momoStatus,
-      completed_at: status === "pending" ? null : new Date().toISOString(),
-    };
-
     const { error: updateError } = await supabaseAdmin
       .from("mobile_money_payments")
-      .update(update)
+      .update({
+        status,
+        provider_status: rawStatus,
+        reason: "reason" in providerStatus ? providerStatus.reason ?? null : providerStatus.message ?? null,
+        raw_response: providerStatus,
+        completed_at: status === "pending" ? null : new Date().toISOString(),
+      })
       .eq("id", payment.id);
     if (updateError) throw new Error(updateError.message);
 
@@ -179,6 +247,8 @@ export const checkMtnMomoActivationPayment = createServerFn({ method: "POST" })
     return {
       paymentId: payment.id,
       referenceId: payment.reference_id,
+      packageId: payment.package_id,
+      provider,
       amount: Number(payment.amount),
       currency: payment.currency,
       status,
