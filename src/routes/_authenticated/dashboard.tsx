@@ -1,10 +1,16 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import {
-  ShieldCheck, Wallet, FileCheck2, Banknote, Clock, ArrowRight, LogOut, BellRing, CreditCard, BadgeCheck,
+  ShieldCheck, Wallet, FileCheck2, Banknote, Clock, ArrowRight, LogOut, BellRing, CreditCard, BadgeCheck, Loader2, RefreshCcw, Smartphone,
 } from "lucide-react";
+import {
+  checkMtnMomoActivationPayment,
+  startMtnMomoActivationPayment,
+  type ActivationPaymentResult,
+} from "@/lib/payments.functions";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({ meta: [{ title: "Dashboard — LendFlow Zambia" }] }),
@@ -21,9 +27,14 @@ type Profile = {
 
 function Dashboard() {
   const navigate = useNavigate();
+  const startActivationPayment = useServerFn(startMtnMomoActivationPayment);
+  const checkActivationPayment = useServerFn(checkMtnMomoActivationPayment);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [email, setEmail] = useState<string>("");
   const [isAdmin, setIsAdmin] = useState(false);
+  const [paymentPhone, setPaymentPhone] = useState("");
+  const [payment, setPayment] = useState<ActivationPaymentResult | null>(null);
+  const [paymentBusy, setPaymentBusy] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -36,6 +47,7 @@ function Dashboard() {
         .eq("id", u.user.id)
         .maybeSingle();
       if (data) setProfile(data as Profile);
+      if (data?.phone) setPaymentPhone(data.phone);
       const { data: roles } = await supabase.from("user_roles").select("role").eq("user_id", u.user.id);
       setIsAdmin((roles ?? []).some((r) => r.role === "admin"));
     })();
@@ -51,6 +63,44 @@ function Dashboard() {
   const kyc = profile?.kyc_status ?? "pending";
   const activation = profile?.activation_status ?? "unpaid";
   const completion = computeCompletion(profile);
+
+  const beginPayment = async () => {
+    setPaymentBusy(true);
+    try {
+      const result = await startActivationPayment({
+        data: { phone: paymentPhone || undefined },
+      });
+      setPayment(result);
+      setProfile((p) => (p ? { ...p, phone: result.phone, activation_status: "pending" } : p));
+      setPaymentPhone(result.phone);
+      toast.success("MTN MoMo payment request sent");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not start MTN MoMo payment");
+    } finally {
+      setPaymentBusy(false);
+    }
+  };
+
+  const refreshPayment = async () => {
+    if (!payment) return;
+    setPaymentBusy(true);
+    try {
+      const result = await checkActivationPayment({ data: { paymentId: payment.paymentId } });
+      setPayment(result);
+      if (result.status === "successful") {
+        setProfile((p) => (p ? { ...p, activation_status: "active" } : p));
+        toast.success("Payment confirmed. Your account is active.");
+      } else if (result.status === "failed") {
+        toast.error("MTN MoMo payment failed");
+      } else {
+        toast.info("Payment is still pending");
+      }
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not check payment status");
+    } finally {
+      setPaymentBusy(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -126,13 +176,16 @@ function Dashboard() {
                 interactive
               />
             </Link>
-            <Step
-              icon={BadgeCheck}
-              n="03"
-              title="Activate membership"
-              status={statusFromActivation(activation)}
-              desc="Pay activation fee to unlock your loan tier."
-            />
+            <button type="button" onClick={() => document.getElementById("mtn-momo-activation")?.scrollIntoView({ behavior: "smooth", block: "center" })} className="contents">
+              <Step
+                icon={BadgeCheck}
+                n="03"
+                title="Activate membership"
+                status={statusFromActivation(activation)}
+                desc="Pay activation fee with MTN MoMo."
+                interactive
+              />
+            </button>
           </div>
         </section>
 
@@ -161,9 +214,65 @@ function Dashboard() {
               </Link>
             </div>
           </div>
-          <div className="bg-card ring-1 ring-black/5 rounded-2xl p-8 space-y-4">
-            <h3 className="font-medium text-navy">Recent Activity</h3>
-            <p className="text-sm text-muted-foreground">No transactions yet. Your loan history and repayments will appear here.</p>
+          <div id="mtn-momo-activation" className="bg-card ring-1 ring-black/5 rounded-2xl p-8 space-y-5">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h3 className="font-medium text-navy">MTN MoMo activation</h3>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Pay your activation fee from an MTN Mobile Money wallet.
+                </p>
+              </div>
+              <Smartphone className="size-5 text-emerald" />
+            </div>
+
+            {activation === "active" ? (
+              <div className="rounded-lg bg-emerald/10 px-4 py-3 text-sm font-medium text-emerald">
+                Your membership is active.
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <label className="space-y-2 block">
+                  <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">MTN number</span>
+                  <input
+                    value={paymentPhone}
+                    onChange={(e) => setPaymentPhone(e.target.value)}
+                    placeholder="260971234567"
+                    className="w-full rounded-lg border border-hairline bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-emerald/30"
+                  />
+                </label>
+                <button
+                  onClick={beginPayment}
+                  disabled={paymentBusy || activation === "active"}
+                  className="w-full bg-emerald text-emerald-foreground py-3 px-4 rounded-lg font-medium text-sm hover:bg-emerald/90 transition-colors disabled:opacity-50 inline-flex items-center justify-center gap-2"
+                >
+                  {paymentBusy ? <Loader2 className="size-4 animate-spin" /> : <Wallet className="size-4" />}
+                  Pay with MTN MoMo
+                </button>
+
+                {payment && (
+                  <div className="rounded-lg border border-hairline p-4 space-y-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <p className="text-xs text-muted-foreground">Payment request</p>
+                        <p className="font-medium text-navy">K {payment.amount.toLocaleString()} {payment.currency}</p>
+                      </div>
+                      <span className={`text-[10px] uppercase tracking-wider font-semibold px-2 py-1 rounded-full ${payment.status === "successful" ? "bg-emerald/10 text-emerald" : payment.status === "failed" ? "bg-destructive/10 text-destructive" : "bg-amber-50 text-amber-700"}`}>
+                        {payment.status}
+                      </span>
+                    </div>
+                    <p className="break-all text-xs text-muted-foreground">Ref: {payment.referenceId}</p>
+                    <button
+                      onClick={refreshPayment}
+                      disabled={paymentBusy || payment.status !== "pending"}
+                      className="w-full border border-hairline py-2 px-3 rounded-lg font-medium text-sm hover:bg-surface-muted transition-colors disabled:opacity-50 inline-flex items-center justify-center gap-2"
+                    >
+                      {paymentBusy ? <Loader2 className="size-4 animate-spin" /> : <RefreshCcw className="size-4" />}
+                      Check status
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </section>
       </main>

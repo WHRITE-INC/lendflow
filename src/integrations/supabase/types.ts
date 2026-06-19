@@ -184,6 +184,71 @@ export type Database = {
           },
         ]
       }
+      mobile_money_payments: {
+        Row: {
+          amount: number
+          completed_at: string | null
+          created_at: string
+          currency: string
+          external_id: string
+          id: string
+          phone: string
+          provider: string
+          provider_status: string | null
+          raw_response: Json
+          reason: string | null
+          reference_id: string
+          status: string
+          tier_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          completed_at?: string | null
+          created_at?: string
+          currency?: string
+          external_id: string
+          id?: string
+          phone: string
+          provider?: string
+          provider_status?: string | null
+          raw_response?: Json
+          reason?: string | null
+          reference_id: string
+          status?: string
+          tier_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          completed_at?: string | null
+          created_at?: string
+          currency?: string
+          external_id?: string
+          id?: string
+          phone?: string
+          provider?: string
+          provider_status?: string | null
+          raw_response?: Json
+          reason?: string | null
+          reference_id?: string
+          status?: string
+          tier_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mobile_money_payments_tier_id_fkey"
+            columns: ["tier_id"]
+            isOneToOne: false
+            referencedRelation: "loan_tiers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           activation_status: string
