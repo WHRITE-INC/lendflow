@@ -14,15 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
+      audit_logs: {
+        Row: {
+          action: string
+          actor_id: string | null
+          created_at: string
+          diff: Json | null
+          entity: string
+          entity_id: string | null
+          id: string
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          created_at?: string
+          diff?: Json | null
+          entity: string
+          entity_id?: string | null
+          id?: string
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          created_at?: string
+          diff?: Json | null
+          entity?: string
+          entity_id?: string | null
+          id?: string
+        }
+        Relationships: []
+      }
       kyc_documents: {
         Row: {
           created_at: string
           doc_type: Database["public"]["Enums"]["kyc_doc_type"]
           id: string
-          review_notes: string | null
+          rejection_reason: string | null
           reviewed_at: string | null
-          reviewed_by: string | null
-          status: Database["public"]["Enums"]["kyc_doc_status"]
+          reviewer_id: string | null
+          status: Database["public"]["Enums"]["doc_status"]
           storage_path: string
           updated_at: string
           user_id: string
@@ -31,10 +61,10 @@ export type Database = {
           created_at?: string
           doc_type: Database["public"]["Enums"]["kyc_doc_type"]
           id?: string
-          review_notes?: string | null
+          rejection_reason?: string | null
           reviewed_at?: string | null
-          reviewed_by?: string | null
-          status?: Database["public"]["Enums"]["kyc_doc_status"]
+          reviewer_id?: string | null
+          status?: Database["public"]["Enums"]["doc_status"]
           storage_path: string
           updated_at?: string
           user_id: string
@@ -43,327 +73,390 @@ export type Database = {
           created_at?: string
           doc_type?: Database["public"]["Enums"]["kyc_doc_type"]
           id?: string
-          review_notes?: string | null
+          rejection_reason?: string | null
           reviewed_at?: string | null
-          reviewed_by?: string | null
-          status?: Database["public"]["Enums"]["kyc_doc_status"]
+          reviewer_id?: string | null
+          status?: Database["public"]["Enums"]["doc_status"]
           storage_path?: string
           updated_at?: string
           user_id?: string
         }
         Relationships: []
       }
-      loan_tiers: {
+      loan_applications: {
         Row: {
-          activation_fee: number
           created_at: string
-          description: string | null
-          eligibility_rules: Json
+          decided_at: string | null
+          decided_by: string | null
+          decision_notes: string | null
           id: string
-          interest_rate: number
-          is_active: boolean
-          max_active_loans: number
+          product_id: string
+          purpose: string | null
+          requested_amount: number
+          status: Database["public"]["Enums"]["application_status"]
+          term_days: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          decision_notes?: string | null
+          id?: string
+          product_id: string
+          purpose?: string | null
+          requested_amount: number
+          status?: Database["public"]["Enums"]["application_status"]
+          term_days: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          decision_notes?: string | null
+          id?: string
+          product_id?: string
+          purpose?: string | null
+          requested_amount?: number
+          status?: Database["public"]["Enums"]["application_status"]
+          term_days?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "loan_applications_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "loan_products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      loan_products: {
+        Row: {
+          active: boolean
+          country: Database["public"]["Enums"]["country_code"]
+          created_at: string
+          currency: Database["public"]["Enums"]["currency_code"]
+          description: string | null
+          eligibility: Json
+          id: string
+          interest_rate_pct: number
           max_amount: number
-          max_outstanding_principal: number | null
-          max_repayment_frequency_days: number
-          max_term_months: number
-          min_age: number
           min_amount: number
-          min_repayment_frequency_days: number
-          min_term_months: number
           name: string
-          processing_fee: number
-          required_activation_status: string
-          required_kyc_status: string
-          sort_order: number
+          term_days: number
           updated_at: string
         }
         Insert: {
-          activation_fee?: number
+          active?: boolean
+          country: Database["public"]["Enums"]["country_code"]
           created_at?: string
+          currency: Database["public"]["Enums"]["currency_code"]
           description?: string | null
-          eligibility_rules?: Json
+          eligibility?: Json
           id?: string
-          interest_rate: number
-          is_active?: boolean
-          max_active_loans?: number
+          interest_rate_pct: number
           max_amount: number
-          max_outstanding_principal?: number | null
-          max_repayment_frequency_days?: number
-          max_term_months: number
-          min_age?: number
           min_amount: number
-          min_repayment_frequency_days?: number
-          min_term_months: number
           name: string
-          processing_fee?: number
-          required_activation_status?: string
-          required_kyc_status?: string
-          sort_order?: number
+          term_days: number
           updated_at?: string
         }
         Update: {
-          activation_fee?: number
+          active?: boolean
+          country?: Database["public"]["Enums"]["country_code"]
           created_at?: string
+          currency?: Database["public"]["Enums"]["currency_code"]
           description?: string | null
-          eligibility_rules?: Json
+          eligibility?: Json
           id?: string
-          interest_rate?: number
-          is_active?: boolean
-          max_active_loans?: number
+          interest_rate_pct?: number
           max_amount?: number
-          max_outstanding_principal?: number | null
-          max_repayment_frequency_days?: number
-          max_term_months?: number
-          min_age?: number
           min_amount?: number
-          min_repayment_frequency_days?: number
-          min_term_months?: number
           name?: string
-          processing_fee?: number
-          required_activation_status?: string
-          required_kyc_status?: string
-          sort_order?: number
+          term_days?: number
           updated_at?: string
         }
         Relationships: []
       }
       loans: {
         Row: {
+          application_id: string
           created_at: string
+          currency: Database["public"]["Enums"]["currency_code"]
           disbursed_at: string | null
-          due_at: string | null
+          due_date: string
           id: string
-          interest_rate: number
-          outstanding_principal: number
+          interest: number
+          outstanding: number
           principal: number
-          repayment_frequency_days: number
-          status: string
-          term_months: number
-          tier_id: string
+          product_id: string
+          status: Database["public"]["Enums"]["loan_status"]
+          total_payable: number
           updated_at: string
           user_id: string
         }
         Insert: {
+          application_id: string
           created_at?: string
+          currency: Database["public"]["Enums"]["currency_code"]
           disbursed_at?: string | null
-          due_at?: string | null
+          due_date: string
           id?: string
-          interest_rate: number
-          outstanding_principal: number
+          interest: number
+          outstanding: number
           principal: number
-          repayment_frequency_days: number
-          status?: string
-          term_months: number
-          tier_id: string
+          product_id: string
+          status?: Database["public"]["Enums"]["loan_status"]
+          total_payable: number
           updated_at?: string
           user_id: string
         }
         Update: {
+          application_id?: string
           created_at?: string
+          currency?: Database["public"]["Enums"]["currency_code"]
           disbursed_at?: string | null
-          due_at?: string | null
+          due_date?: string
           id?: string
-          interest_rate?: number
-          outstanding_principal?: number
+          interest?: number
+          outstanding?: number
           principal?: number
-          repayment_frequency_days?: number
-          status?: string
-          term_months?: number
-          tier_id?: string
+          product_id?: string
+          status?: Database["public"]["Enums"]["loan_status"]
+          total_payable?: number
           updated_at?: string
           user_id?: string
         }
         Relationships: [
           {
-            foreignKeyName: "loans_tier_id_fkey"
-            columns: ["tier_id"]
+            foreignKeyName: "loans_application_id_fkey"
+            columns: ["application_id"]
             isOneToOne: false
-            referencedRelation: "loan_tiers"
+            referencedRelation: "loan_applications"
             referencedColumns: ["id"]
           },
-        ]
-      }
-      mobile_money_payments: {
-        Row: {
-          amount: number
-          completed_at: string | null
-          created_at: string
-          currency: string
-          external_id: string
-          id: string
-          package_id: string | null
-          phone: string
-          provider: string
-          provider_status: string | null
-          raw_response: Json
-          reason: string | null
-          reference_id: string
-          status: string
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          amount: number
-          completed_at?: string | null
-          created_at?: string
-          currency?: string
-          external_id: string
-          id?: string
-          package_id?: string | null
-          phone: string
-          provider?: string
-          provider_status?: string | null
-          raw_response?: Json
-          reason?: string | null
-          reference_id: string
-          status?: string
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          amount?: number
-          completed_at?: string | null
-          created_at?: string
-          currency?: string
-          external_id?: string
-          id?: string
-          package_id?: string | null
-          phone?: string
-          provider?: string
-          provider_status?: string | null
-          raw_response?: Json
-          reason?: string | null
-          reference_id?: string
-          status?: string
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: [
           {
-            foreignKeyName: "mobile_money_payments_package_id_fkey"
-            columns: ["package_id"]
+            foreignKeyName: "loans_product_id_fkey"
+            columns: ["product_id"]
             isOneToOne: false
-            referencedRelation: "promotion_packages"
+            referencedRelation: "loan_products"
             referencedColumns: ["id"]
           },
         ]
       }
-      promotion_packages: {
+      notifications: {
         Row: {
-          accent: string
-          badge: string | null
+          body: string | null
+          channel: Database["public"]["Enums"]["notification_channel"]
           created_at: string
-          currency: string
-          description: string | null
-          fee_amount: number
-          headline: string
           id: string
-          is_active: boolean
-          name: string
-          original_currency: string | null
-          original_fee_amount: number | null
-          original_qualification_amount: number | null
-          qualification_amount: number
-          sort_order: number
-          updated_at: string
+          payload: Json | null
+          read_at: string | null
+          sent_at: string | null
+          template: string
+          title: string
+          user_id: string
         }
         Insert: {
-          accent?: string
-          badge?: string | null
+          body?: string | null
+          channel?: Database["public"]["Enums"]["notification_channel"]
           created_at?: string
-          currency?: string
-          description?: string | null
-          fee_amount: number
-          headline: string
           id?: string
-          is_active?: boolean
-          name: string
-          original_currency?: string | null
-          original_fee_amount?: number | null
-          original_qualification_amount?: number | null
-          qualification_amount: number
-          sort_order?: number
-          updated_at?: string
+          payload?: Json | null
+          read_at?: string | null
+          sent_at?: string | null
+          template: string
+          title: string
+          user_id: string
         }
         Update: {
-          accent?: string
-          badge?: string | null
+          body?: string | null
+          channel?: Database["public"]["Enums"]["notification_channel"]
           created_at?: string
-          currency?: string
-          description?: string | null
-          fee_amount?: number
-          headline?: string
           id?: string
-          is_active?: boolean
-          name?: string
-          original_currency?: string | null
-          original_fee_amount?: number | null
-          original_qualification_amount?: number | null
-          qualification_amount?: number
-          sort_order?: number
-          updated_at?: string
+          payload?: Json | null
+          read_at?: string | null
+          sent_at?: string | null
+          template?: string
+          title?: string
+          user_id?: string
         }
         Relationships: []
       }
       profiles: {
         Row: {
-          activation_status: string
           address: string | null
-          city: string | null
+          country: Database["public"]["Enums"]["country_code"] | null
           created_at: string
           date_of_birth: string | null
-          first_name: string | null
-          gender: string | null
-          id: string
-          kyc_status: string
-          last_name: string | null
+          email: string | null
+          employment: string | null
+          full_name: string | null
+          kyc_status: Database["public"]["Enums"]["kyc_status"]
           national_id: string | null
-          phone: string | null
-          province: string | null
-          tier_id: string | null
+          phone_e164: string | null
+          risk_score: number
+          suspended_at: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          address?: string | null
+          country?: Database["public"]["Enums"]["country_code"] | null
+          created_at?: string
+          date_of_birth?: string | null
+          email?: string | null
+          employment?: string | null
+          full_name?: string | null
+          kyc_status?: Database["public"]["Enums"]["kyc_status"]
+          national_id?: string | null
+          phone_e164?: string | null
+          risk_score?: number
+          suspended_at?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          address?: string | null
+          country?: Database["public"]["Enums"]["country_code"] | null
+          created_at?: string
+          date_of_birth?: string | null
+          email?: string | null
+          employment?: string | null
+          full_name?: string | null
+          kyc_status?: Database["public"]["Enums"]["kyc_status"]
+          national_id?: string | null
+          phone_e164?: string | null
+          risk_score?: number
+          suspended_at?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      repayment_schedules: {
+        Row: {
+          amount_due: number
+          amount_paid: number
+          created_at: string
+          due_date: string
+          id: string
+          installment_no: number
+          loan_id: string
+          status: Database["public"]["Enums"]["schedule_status"]
           updated_at: string
         }
         Insert: {
-          activation_status?: string
-          address?: string | null
-          city?: string | null
+          amount_due: number
+          amount_paid?: number
           created_at?: string
-          date_of_birth?: string | null
-          first_name?: string | null
-          gender?: string | null
-          id: string
-          kyc_status?: string
-          last_name?: string | null
-          national_id?: string | null
-          phone?: string | null
-          province?: string | null
-          tier_id?: string | null
+          due_date: string
+          id?: string
+          installment_no: number
+          loan_id: string
+          status?: Database["public"]["Enums"]["schedule_status"]
           updated_at?: string
         }
         Update: {
-          activation_status?: string
-          address?: string | null
-          city?: string | null
+          amount_due?: number
+          amount_paid?: number
           created_at?: string
-          date_of_birth?: string | null
-          first_name?: string | null
-          gender?: string | null
+          due_date?: string
           id?: string
-          kyc_status?: string
-          last_name?: string | null
-          national_id?: string | null
-          phone?: string | null
-          province?: string | null
-          tier_id?: string | null
+          installment_no?: number
+          loan_id?: string
+          status?: Database["public"]["Enums"]["schedule_status"]
           updated_at?: string
         }
         Relationships: [
           {
-            foreignKeyName: "profiles_tier_id_fkey"
-            columns: ["tier_id"]
+            foreignKeyName: "repayment_schedules_loan_id_fkey"
+            columns: ["loan_id"]
             isOneToOne: false
-            referencedRelation: "loan_tiers"
+            referencedRelation: "loans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      settings: {
+        Row: {
+          key: string
+          updated_at: string
+          value: Json
+        }
+        Insert: {
+          key: string
+          updated_at?: string
+          value: Json
+        }
+        Update: {
+          key?: string
+          updated_at?: string
+          value?: Json
+        }
+        Relationships: []
+      }
+      transactions: {
+        Row: {
+          amount: number
+          created_at: string
+          currency: Database["public"]["Enums"]["currency_code"]
+          direction: Database["public"]["Enums"]["tx_direction"]
+          failure_reason: string | null
+          id: string
+          loan_id: string | null
+          msisdn: string | null
+          provider: Database["public"]["Enums"]["tx_provider"]
+          provider_ref: string | null
+          raw_payload: Json | null
+          status: Database["public"]["Enums"]["tx_status"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          currency: Database["public"]["Enums"]["currency_code"]
+          direction: Database["public"]["Enums"]["tx_direction"]
+          failure_reason?: string | null
+          id?: string
+          loan_id?: string | null
+          msisdn?: string | null
+          provider: Database["public"]["Enums"]["tx_provider"]
+          provider_ref?: string | null
+          raw_payload?: Json | null
+          status?: Database["public"]["Enums"]["tx_status"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          currency?: Database["public"]["Enums"]["currency_code"]
+          direction?: Database["public"]["Enums"]["tx_direction"]
+          failure_reason?: string | null
+          id?: string
+          loan_id?: string | null
+          msisdn?: string | null
+          provider?: Database["public"]["Enums"]["tx_provider"]
+          provider_ref?: string | null
+          raw_payload?: Json | null
+          status?: Database["public"]["Enums"]["tx_status"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transactions_loan_id_fkey"
+            columns: ["loan_id"]
+            isOneToOne: false
+            referencedRelation: "loans"
             referencedColumns: ["id"]
           },
         ]
@@ -394,17 +487,6 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      evaluate_tier_eligibility: {
-        Args: { _user_id: string }
-        Returns: {
-          active_loan_count: number
-          eligible: boolean
-          outstanding_principal: number
-          reasons: string[]
-          tier_id: string
-          tier_name: string
-        }[]
-      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -414,9 +496,29 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "admin" | "borrower"
-      kyc_doc_status: "pending" | "approved" | "rejected"
-      kyc_doc_type: "id_front" | "id_back" | "selfie"
+      app_role: "borrower" | "reviewer" | "admin"
+      application_status:
+        | "submitted"
+        | "under_review"
+        | "approved"
+        | "rejected"
+        | "withdrawn"
+      country_code: "KE" | "UG" | "TZ" | "RW" | "GH" | "NG"
+      currency_code: "KES" | "UGX" | "TZS" | "RWF" | "GHS" | "NGN"
+      doc_status: "pending" | "approved" | "rejected"
+      kyc_doc_type: "national_id" | "passport" | "utility_bill" | "selfie"
+      kyc_status: "pending" | "in_review" | "approved" | "rejected"
+      loan_status:
+        | "pending_disbursement"
+        | "active"
+        | "completed"
+        | "defaulted"
+        | "written_off"
+      notification_channel: "email" | "sms" | "inapp"
+      schedule_status: "upcoming" | "paid" | "partial" | "overdue"
+      tx_direction: "disbursement" | "repayment" | "refund" | "reversal"
+      tx_provider: "mtn" | "airtel" | "mpesa" | "manual"
+      tx_status: "pending" | "success" | "failed" | "reversed"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -544,9 +646,31 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "borrower"],
-      kyc_doc_status: ["pending", "approved", "rejected"],
-      kyc_doc_type: ["id_front", "id_back", "selfie"],
+      app_role: ["borrower", "reviewer", "admin"],
+      application_status: [
+        "submitted",
+        "under_review",
+        "approved",
+        "rejected",
+        "withdrawn",
+      ],
+      country_code: ["KE", "UG", "TZ", "RW", "GH", "NG"],
+      currency_code: ["KES", "UGX", "TZS", "RWF", "GHS", "NGN"],
+      doc_status: ["pending", "approved", "rejected"],
+      kyc_doc_type: ["national_id", "passport", "utility_bill", "selfie"],
+      kyc_status: ["pending", "in_review", "approved", "rejected"],
+      loan_status: [
+        "pending_disbursement",
+        "active",
+        "completed",
+        "defaulted",
+        "written_off",
+      ],
+      notification_channel: ["email", "sms", "inapp"],
+      schedule_status: ["upcoming", "paid", "partial", "overdue"],
+      tx_direction: ["disbursement", "repayment", "refund", "reversal"],
+      tx_provider: ["mtn", "airtel", "mpesa", "manual"],
+      tx_status: ["pending", "success", "failed", "reversed"],
     },
   },
 } as const

@@ -1,154 +1,89 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { AutoStatusPill } from "@/components/status-pill";
+import { updateKycStatus } from "@/lib/admin.functions";
 import { toast } from "sonner";
-import { CheckCircle2, XCircle, Loader2, Clock } from "lucide-react";
+import { useEffect, useState } from "react";
 
 export const Route = createFileRoute("/_authenticated/admin/kyc")({
-  head: () => ({ meta: [{ title: "KYC review — Admin" }] }),
-  component: AdminKyc,
+  head: () => ({ meta: [{ title: "KYC queue — Admin" }] }),
+  component: KycQueue,
 });
 
-type Row = {
-  id: string;
-  user_id: string;
-  doc_type: "id_front" | "id_back" | "selfie";
-  storage_path: string;
-  status: "pending" | "approved" | "rejected";
-  review_notes: string | null;
-  updated_at: string;
-  profile?: { first_name: string | null; last_name: string | null; phone: string | null };
-  url?: string;
-};
+function KycQueue() {
+  const qc = useQueryClient();
+  const update = useServerFn(updateKycStatus);
+  const { data, isLoading } = useQuery({
+    queryKey: ["admin-kyc"],
+    queryFn: async () => {
+      const { data: docs } = await supabase
+        .from("kyc_documents")
+        .select("*, profiles!kyc_documents_user_id_fkey(full_name, country, kyc_status)")
+        .order("created_at", { ascending: false });
+      return docs ?? [];
+    },
+  });
 
-const TYPE_LABEL: Record<Row["doc_type"], string> = {
-  id_front: "ID Front", id_back: "ID Back", selfie: "Selfie",
-};
+  async function decide(userId: string, status: "approved" | "rejected") {
+    const reason = status === "rejected" ? window.prompt("Reason?") ?? "" : "";
+    try {
+      await update({ data: { user_id: userId, status, reason } });
+      toast.success(`KYC ${status}`);
+      qc.invalidateQueries({ queryKey: ["admin-kyc"] });
+    } catch (e) { toast.error(e instanceof Error ? e.message : "Failed"); }
+  }
 
-function AdminKyc() {
-  const [rows, setRows] = useState<Row[]>([]);
-  const [filter, setFilter] = useState<"pending" | "approved" | "rejected" | "all">("pending");
-  const [loading, setLoading] = useState(true);
-
-  const load = async () => {
-    setLoading(true);
-    let q = supabase
-      .from("kyc_documents")
-      .select("id,user_id,doc_type,storage_path,status,review_notes,updated_at")
-      .order("updated_at", { ascending: false })
-      .limit(100);
-    if (filter !== "all") q = q.eq("status", filter);
-    const { data, error } = await q;
-    if (error) { toast.error(error.message); setLoading(false); return; }
-    const baseRows = (data ?? []) as Row[];
-
-    const userIds = Array.from(new Set(baseRows.map((r) => r.user_id)));
-    const profilesByUser = new Map<string, Row["profile"]>();
-    if (userIds.length) {
-      const { data: profs } = await supabase
-        .from("profiles")
-        .select("id,first_name,last_name,phone")
-        .in("id", userIds);
-      (profs ?? []).forEach((p) => profilesByUser.set(p.id, p));
-    }
-
-    const withUrls = await Promise.all(baseRows.map(async (r) => {
-      const { data: signed } = await supabase.storage.from("kyc-documents")
-        .createSignedUrl(r.storage_path, 300);
-      return { ...r, profile: profilesByUser.get(r.user_id), url: signed?.signedUrl };
-    }));
-    setRows(withUrls);
-    setLoading(false);
-  };
-
-  useEffect(() => { load(); /* eslint-disable-next-line */ }, [filter]);
-
-  const decide = async (row: Row, status: "approved" | "rejected") => {
-    let notes: string | null = null;
-    if (status === "rejected") {
-      notes = window.prompt("Reason for rejection (shown to borrower):") ?? null;
-      if (!notes) { toast.error("Rejection reason required"); return; }
-    }
-    const { data: u } = await supabase.auth.getUser();
-    const { error } = await supabase.from("kyc_documents")
-      .update({ status, review_notes: notes, reviewed_at: new Date().toISOString(), reviewed_by: u.user?.id })
-      .eq("id", row.id);
-    if (error) { toast.error(error.message); return; }
-    toast.success(`Document ${status}`);
-    load();
-  };
+  if (isLoading || !data) return <div className="text-muted-foreground">Loading…</div>;
 
   return (
-    <div className="space-y-8">
-      <div className="flex items-end justify-between flex-wrap gap-4">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-wider text-emerald">Compliance</p>
-          <h1 className="text-3xl font-medium text-navy mt-1">KYC review queue</h1>
-        </div>
-        <div className="inline-flex bg-card ring-1 ring-hairline rounded-full p-1 text-xs font-medium">
-          {(["pending", "approved", "rejected", "all"] as const).map((f) => (
-            <button
-              key={f}
-              onClick={() => setFilter(f)}
-              className={`px-3 py-1.5 rounded-full capitalize transition-colors ${filter === f ? "bg-navy text-navy-foreground" : "text-muted-foreground hover:text-navy"}`}
-            >{f}</button>
-          ))}
-        </div>
+    <div className="mx-auto max-w-6xl space-y-6">
+      <h1 className="font-display text-3xl font-semibold">KYC review queue</h1>
+      <div className="grid gap-4 lg:grid-cols-2">
+        {data.map((d) => {
+          const p = (d as unknown as { profiles?: { full_name: string; country: string; kyc_status: string } }).profiles;
+          return <KycCard key={d.id} doc={d} profile={p} onDecide={decide} />;
+        })}
+        {data.length === 0 && <p className="text-muted-foreground">Queue empty.</p>}
       </div>
-
-      {loading ? (
-        <div className="flex items-center justify-center py-20"><Loader2 className="size-6 animate-spin text-emerald" /></div>
-      ) : rows.length === 0 ? (
-        <div className="text-center py-20 bg-card ring-1 ring-black/5 rounded-2xl">
-          <Clock className="size-8 text-muted-foreground/40 mx-auto mb-3" />
-          <p className="text-sm text-muted-foreground">No documents match this filter.</p>
-        </div>
-      ) : (
-        <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4">
-          {rows.map((r) => (
-            <div key={r.id} className="bg-card ring-1 ring-black/5 rounded-2xl overflow-hidden flex flex-col">
-              <div className="aspect-[4/3] bg-surface-muted">
-                {r.url ? <img src={r.url} alt="" className="w-full h-full object-cover" /> : null}
-              </div>
-              <div className="p-5 space-y-3 flex-1 flex flex-col">
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] uppercase tracking-wider font-semibold text-emerald">{TYPE_LABEL[r.doc_type]}</span>
-                  <StatusPill status={r.status} />
-                </div>
-                <div>
-                  <p className="font-medium text-navy text-sm">
-                    {[r.profile?.first_name, r.profile?.last_name].filter(Boolean).join(" ") || "Unnamed borrower"}
-                  </p>
-                  <p className="text-xs text-muted-foreground">{r.profile?.phone ?? "no phone"}</p>
-                  <p className="text-[11px] text-muted-foreground/70 font-mono mt-1">{r.user_id.slice(0, 8)}…</p>
-                </div>
-                {r.review_notes && (
-                  <p className="text-xs text-muted-foreground italic">Note: {r.review_notes}</p>
-                )}
-                {r.status === "pending" && (
-                  <div className="flex gap-2 pt-2 mt-auto">
-                    <button onClick={() => decide(r, "approved")} className="flex-1 py-2 rounded-lg bg-emerald text-emerald-foreground text-xs font-medium hover:bg-emerald/90 inline-flex items-center justify-center gap-1.5">
-                      <CheckCircle2 className="size-3.5" /> Approve
-                    </button>
-                    <button onClick={() => decide(r, "rejected")} className="flex-1 py-2 rounded-lg bg-destructive text-destructive-foreground text-xs font-medium hover:bg-destructive/90 inline-flex items-center justify-center gap-1.5">
-                      <XCircle className="size-3.5" /> Reject
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
     </div>
   );
 }
 
-function StatusPill({ status }: { status: Row["status"] }) {
-  const map = {
-    approved: "bg-emerald/10 text-emerald",
-    rejected: "bg-destructive/10 text-destructive",
-    pending: "bg-amber-50 text-amber-700",
-  } as const;
-  return <span className={`text-[10px] uppercase tracking-wider font-semibold px-2 py-1 rounded-full ${map[status]}`}>{status}</span>;
+function KycCard({ doc, profile, onDecide }: {
+  doc: { id: string; user_id: string; doc_type: string; storage_path: string; status: string; created_at: string };
+  profile?: { full_name: string; country: string; kyc_status: string };
+  onDecide: (u: string, s: "approved" | "rejected") => void;
+}) {
+  const [url, setUrl] = useState<string | null>(null);
+  useEffect(() => {
+    supabase.storage.from("kyc").createSignedUrl(doc.storage_path, 300).then(({ data }) => setUrl(data?.signedUrl ?? null));
+  }, [doc.storage_path]);
+  return (
+    <Card className="overflow-hidden">
+      {url ? (
+        doc.storage_path.endsWith(".pdf") ?
+          <a href={url} target="_blank" rel="noreferrer" className="block bg-muted/50 p-12 text-center text-accent">Open PDF</a>
+        : <img src={url} alt="" className="aspect-video w-full bg-muted object-contain" />
+      ) : <div className="aspect-video w-full animate-pulse bg-muted" />}
+      <div className="p-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="font-medium">{profile?.full_name ?? "—"}</div>
+            <div className="text-xs text-muted-foreground">{profile?.country} · {doc.doc_type.replace("_", " ")}</div>
+          </div>
+          <AutoStatusPill status={doc.status} />
+        </div>
+        {(doc.status === "pending" || doc.status === "in_review") && (
+          <div className="mt-4 flex gap-2">
+            <Button size="sm" variant="outline" className="flex-1" onClick={() => onDecide(doc.user_id, "rejected")}>Reject</Button>
+            <Button size="sm" className="flex-1" onClick={() => onDecide(doc.user_id, "approved")}>Approve</Button>
+          </div>
+        )}
+      </div>
+    </Card>
+  );
 }
