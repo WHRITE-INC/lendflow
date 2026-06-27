@@ -12,6 +12,7 @@ import {
   normalizeMomoMsisdn,
   requestMtnMomoPayment,
 } from "@/lib/mtn-momo.server";
+import { settleToMpesaWallet } from "@/lib/payments/settlement";
 
 const providerSchema = z.enum(["mtn_momo", "airtel_money"]);
 type PaymentProvider = z.infer<typeof providerSchema>;
@@ -258,6 +259,15 @@ export const checkMobileMoneyPackagePayment = createServerFn({ method: "POST" })
         .update({ activation_status: "active" })
         .eq("id", userId);
       if (profileError) throw new Error(profileError.message);
+
+      await settleToMpesaWallet({
+        source: "mobile_money_payment",
+        sourceId: payment.id,
+        provider,
+        amount: Number(payment.amount),
+      }).catch((error) => {
+        console.error("M-Pesa settlement submission failed", error);
+      });
     }
 
     return {

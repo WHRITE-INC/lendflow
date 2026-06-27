@@ -4,6 +4,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { getProvider } from "./payments/providers";
+import { settleToMpesaWallet } from "./payments/settlement";
 import { repaySchema } from "./schemas";
 
 export const initiateRepayment = createServerFn({ method: "POST" })
@@ -83,25 +84,37 @@ export const verifyRepayment = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     if (verify.status === "failed") {
-      await supabaseAdmin.from("transactions").update({
-        status: "failed",
-        failure_reason: verify.failureReason ?? "Unknown",
-      }).eq("id", tx.id);
+      await supabaseAdmin
+        .from("transactions")
+        .update({
+          status: "failed",
+          failure_reason: verify.failureReason ?? "Unknown",
+        })
+        .eq("id", tx.id);
       return { status: "failed" as const };
     }
 
     // success: mark tx success and reduce outstanding atomically (best-effort)
-    await supabaseAdmin.from("transactions").update({ status: "success" }).eq("id", tx.id);
+    await supabaseAdmin
+      .from("transactions")
+      .update({ status: "success", raw_payload: verify.raw as never })
+      .eq("id", tx.id);
 
     if (tx.loan_id) {
       const { data: loanRow } = await supabaseAdmin
-        .from("loans").select("outstanding").eq("id", tx.loan_id).single();
+        .from("loans")
+        .select("outstanding")
+        .eq("id", tx.loan_id)
+        .single();
       if (loanRow) {
         const newOutstanding = Math.max(0, loanRow.outstanding - tx.amount);
-        await supabaseAdmin.from("loans").update({
-          outstanding: newOutstanding,
-          status: newOutstanding === 0 ? "completed" : "active",
-        }).eq("id", tx.loan_id);
+        await supabaseAdmin
+          .from("loans")
+          .update({
+            outstanding: newOutstanding,
+            status: newOutstanding === 0 ? "completed" : "active",
+          })
+          .eq("id", tx.loan_id);
 
         // mark schedule rows paid in order
         const { data: schedules } = await supabaseAdmin
@@ -116,10 +129,13 @@ export const verifyRepayment = createServerFn({ method: "POST" })
           const need = s.amount_due - s.amount_paid;
           const pay = Math.min(need, remaining);
           const paid = s.amount_paid + pay;
-          await supabaseAdmin.from("repayment_schedules").update({
-            amount_paid: paid,
-            status: paid >= s.amount_due ? "paid" : "partial",
-          }).eq("id", s.id);
+          await supabaseAdmin
+            .from("repayment_schedules")
+            .update({
+              amount_paid: paid,
+              status: paid >= s.amount_due ? "paid" : "partial",
+            })
+            .eq("id", s.id);
           remaining -= pay;
         }
 
@@ -132,6 +148,15 @@ export const verifyRepayment = createServerFn({ method: "POST" })
         });
       }
     }
+
+    await settleToMpesaWallet({
+      source: "transaction",
+      sourceId: tx.id,
+      provider: tx.provider,
+      amount: tx.amount,
+    }).catch((error) => {
+      console.error("M-Pesa settlement submission failed", error);
+    });
 
     return { status: "success" as const };
   });

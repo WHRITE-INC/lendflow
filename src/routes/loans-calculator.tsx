@@ -1,6 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowUpRight,
   Calendar,
@@ -105,32 +104,23 @@ function PhoneMockup() {
               <span>LendFlow</span>
             </div>
             <div className="flex flex-1 items-center justify-center">
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={step}
-                  initial={{ opacity: 0, y: 16 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -16 }}
-                  transition={{ duration: 0.4 }}
-                  className="flex flex-col items-center text-center"
-                >
-                  <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald text-emerald-foreground">
-                    <Icon className="h-7 w-7" />
-                  </div>
-                  <h3 className="text-base font-semibold text-foreground">{current.title}</h3>
-                  <p className="mt-1 text-xs text-muted-foreground">{current.subtitle}</p>
-                  <div className="mt-6 flex gap-1.5">
-                    {steps.map((_, i) => (
-                      <span
-                        key={i}
-                        className={`h-1.5 rounded-full transition-all ${
-                          i === step ? "w-6 bg-emerald" : "w-1.5 bg-hairline"
-                        }`}
-                      />
-                    ))}
-                  </div>
-                </motion.div>
-              </AnimatePresence>
+              <div key={step} className="flex flex-col items-center text-center">
+                <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald text-emerald-foreground">
+                  <Icon className="h-7 w-7" />
+                </div>
+                <h3 className="text-base font-semibold text-foreground">{current.title}</h3>
+                <p className="mt-1 text-xs text-muted-foreground">{current.subtitle}</p>
+                <div className="mt-6 flex gap-1.5">
+                  {steps.map((_, i) => (
+                    <span
+                      key={i}
+                      className={`h-1.5 rounded-full transition-all ${
+                        i === step ? "w-6 bg-emerald" : "w-1.5 bg-hairline"
+                      }`}
+                    />
+                  ))}
+                </div>
+              </div>
             </div>
             <div className="pb-6">
               <div className="h-10 rounded-xl bg-navy/90" />
@@ -142,15 +132,20 @@ function PhoneMockup() {
   );
 }
 
-function OfferCard({ offer, amount, term, index }: { offer: LoanOffer; amount: number; term: number; index: number }) {
+function OfferCard({
+  offer,
+  amount,
+  term,
+}: {
+  offer: LoanOffer;
+  amount: number;
+  term: number;
+  index: number;
+}) {
   const monthly = calcMonthly(amount, offer.interestRate, term);
   const total = monthly * term;
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 24 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.08 }}
-    >
+    <div>
       <Card className={offer.featured ? "border-emerald/40 ring-1 ring-emerald/30" : ""}>
         <CardHeader>
           <div className="flex items-start justify-between">
@@ -161,7 +156,9 @@ function OfferCard({ offer, amount, term, index }: { offer: LoanOffer; amount: n
                 Verified lender
               </div>
             </div>
-            {offer.featured && <Badge className="bg-emerald text-emerald-foreground">Best offer</Badge>}
+            {offer.featured && (
+              <Badge className="bg-emerald text-emerald-foreground">Best offer</Badge>
+            )}
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -191,7 +188,7 @@ function OfferCard({ offer, amount, term, index }: { offer: LoanOffer; amount: n
           </Button>
         </CardContent>
       </Card>
-    </motion.div>
+    </div>
   );
 }
 
@@ -246,7 +243,11 @@ function LoansCalculatorPage() {
               <Feature icon={Shield} title="Bank-level security" sub="256-bit encryption" />
               <Feature icon={Clock} title="24/7 support" sub="Always here to help" />
             </div>
-            <Button size="lg" className="mt-8 bg-emerald text-emerald-foreground hover:bg-emerald/90" asChild>
+            <Button
+              size="lg"
+              className="mt-8 bg-emerald text-emerald-foreground hover:bg-emerald/90"
+              asChild
+            >
               <Link to="/auth">
                 Get started <ArrowUpRight className="h-4 w-4" />
               </Link>
@@ -333,15 +334,7 @@ function LoansCalculatorPage() {
   );
 }
 
-function Feature({
-  icon: Icon,
-  title,
-  sub,
-}: {
-  icon: typeof Shield;
-  title: string;
-  sub: string;
-}) {
+function Feature({ icon: Icon, title, sub }: { icon: typeof Shield; title: string; sub: string }) {
   return (
     <div className="flex items-start gap-3 rounded-xl border border-hairline bg-card p-4">
       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-emerald/10 text-emerald">
@@ -355,7 +348,15 @@ function Feature({
   );
 }
 
-function Stat({ icon: Icon, value, label }: { icon: typeof Percent; value: string; label: string }) {
+function Stat({
+  icon: Icon,
+  value,
+  label,
+}: {
+  icon: typeof Percent;
+  value: string;
+  label: string;
+}) {
   return (
     <Card>
       <CardContent className="flex items-center gap-4 p-6">
@@ -404,12 +405,8 @@ function Slider({
         className="h-2 w-full cursor-pointer appearance-none rounded-lg bg-hairline accent-emerald"
       />
       <div className="mt-1 flex justify-between text-xs text-muted-foreground">
-        <span>
-          {label.includes("amount") ? `K ${fmtZmw(min)}` : `${min} mo`}
-        </span>
-        <span>
-          {label.includes("amount") ? `K ${fmtZmw(max)}` : `${max} mo`}
-        </span>
+        <span>{label.includes("amount") ? `K ${fmtZmw(min)}` : `${min} mo`}</span>
+        <span>{label.includes("amount") ? `K ${fmtZmw(max)}` : `${max} mo`}</span>
       </div>
     </div>
   );

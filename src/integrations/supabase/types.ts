@@ -402,6 +402,54 @@ export type Database = {
         }
         Relationships: []
       }
+      payment_settlements: {
+        Row: {
+          amount: number
+          created_at: string
+          destination_msisdn: string
+          destination_provider: string
+          failure_reason: string | null
+          id: string
+          provider_ref: string | null
+          raw_response: Json
+          source_id: string
+          source_table: string
+          status: string
+          submitted_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          destination_msisdn: string
+          destination_provider?: string
+          failure_reason?: string | null
+          id?: string
+          provider_ref?: string | null
+          raw_response?: Json
+          source_id: string
+          source_table: string
+          status?: string
+          submitted_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          destination_msisdn?: string
+          destination_provider?: string
+          failure_reason?: string | null
+          id?: string
+          provider_ref?: string | null
+          raw_response?: Json
+          source_id?: string
+          source_table?: string
+          status?: string
+          submitted_at?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       transactions: {
         Row: {
           amount: number
