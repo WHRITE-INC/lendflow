@@ -1,17 +1,26 @@
 import os
+from pathlib import Path
 from pydantic import Field
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+# Dynamically locate the root directory containing the project .env configuration
+BASE_DIR = Path(__file__).resolve().parent.parent
+ENV_FILE_PATH = BASE_DIR / ".env"
 
 class Settings(BaseSettings):
-    supabase_url: str = Field(..., env="SUPABASE_URL")
-    supabase_key: str = Field(..., env="SUPABASE_KEY")
-    supabase_service_key: str = Field(..., env="SUPABASE_SERVICE_KEY")
-    api_secret_key: str = Field(..., env="API_SECRET_KEY")
+    supabase_url: str
+    supabase_key: str
+    supabase_service_key: str
+    api_secret_key: str
+    
     jwt_algorithm: str = "HS256"
-    access_token_expire_minutes: int = 1440  # 24 Hours
+    access_token_expire_minutes: int = 1440
 
-    class Config:
-        env_file = ".env"
-        extra = "ignore"
+    # Explicit configuration loader matching the exact physical path
+    model_config = SettingsConfigDict(
+        env_file=str(ENV_FILE_PATH),
+        env_file_encoding="utf-8",
+        extra="ignore"
+    )
 
 settings = Settings()
