@@ -12,7 +12,9 @@ class Settings(BaseSettings):
     supabase_key: str
     supabase_service_key: str
     api_secret_key: str
-    
+    next_public_supabase_url: str
+    next_public_supabase_publishable_key: str
+
     jwt_algorithm: str = "HS256"
     access_token_expire_minutes: int = 1440
 
