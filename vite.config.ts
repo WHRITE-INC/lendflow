@@ -12,5 +12,10 @@ export default defineConfig({
   resolve: {
     alias: { "@": path.resolve(__dirname, "./src") },
   },
-  plugins: [tailwindcss(), tanstackStart(), react()],
+  plugins: [
+    tailwindcss(),
+    // Deploys to Vercel when VERCEL is set; keeps the default target elsewhere.
+    tanstackStart(process.env["VERCEL"] ? { target: "vercel" } : {}),
+    react(),
+  ],
 });
