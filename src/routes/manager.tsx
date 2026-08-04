@@ -1,8 +1,9 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { AppShell, KpiCard, StatusPill } from "@/components/AppShell";
+import { SiteHeader, SiteFooter } from "@/components/SiteChrome";
+import { KpiCard, StatusPill } from "@/components/AppShell";
 import {
-  currentUser, listApplications, money, updateApplication,
+  allUsers, currentUser, listApplications, money, reviewKyc, updateApplication, useRealtime,
   type Account, type Application,
 } from "@/lib/demo-auth";
 
@@ -10,100 +11,106 @@ export const Route = createFileRoute("/manager")({
   head: () => ({
     meta: [
       { title: "Manager console — LendFlow Africa" },
-      { name: "description", content: "Review LendFlow Africa loan applications, verify commitment payments and approve 0% interest disbursements." },
+      { name: "description", content: "Approve client identity verifications and reconcile mobile money commitments on LendFlow Africa loan applications." },
       { property: "og:title", content: "Manager console — LendFlow Africa" },
-      { property: "og:description", content: "Review applications and approve disbursements." },
+      { property: "og:description", content: "Verification queue and loan decisions in real time." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   ssr: false,
-  component: ManagerDashboard,
+  component: Manager,
 });
 
-function ManagerDashboard() {
+function Manager() {
   const navigate = useNavigate();
-  const [user, setUser] = useState<Account | null>(null);
-  const [apps, setApps] = useState<Application[]>([]);
-  const [filter, setFilter] = useState<"all" | Application["status"]>("all");
+  const user = useRealtime<Account | null>(() => currentUser());
+  const users = useRealtime<Account[]>(() => allUsers());
+  const apps = useRealtime<Application[]>(() => listApplications());
+  const [ready, setReady] = useState(false);
 
+  useEffect(() => { setReady(true); }, []);
   useEffect(() => {
-    const u = currentUser();
-    if (!u) { navigate({ to: "/auth" }); return; }
-    if (u.role !== "manager") { navigate({ to: "/dashboard" }); return; }
-    setUser(u);
-    setApps(listApplications());
-  }, [navigate]);
+    if (!ready) return;
+    if (!user) navigate({ to: "/auth", search: { mode: "signin" } });
+    else if (user.role !== "manager") navigate({ to: "/dashboard" });
+  }, [ready, user, navigate]);
 
-  if (!user) return null;
+  if (!user || user.role !== "manager") return null;
 
-  const act = (id: string, status: Application["status"]) => {
-    updateApplication(id, { status });
-    setApps(listApplications());
-  };
-
-  const shown = filter === "all" ? apps : apps.filter(a => a.status === filter);
-  const pending = apps.filter(a => a.status === "under_review").length;
-  const book = apps.filter(a => a.status === "approved").reduce((s, a) => s + a.amount, 0);
-  const fees = apps.reduce((s, a) => s + a.commitment, 0);
+  const clients = users.filter(u => u.role === "client");
+  const pending = clients.filter(u => u.kyc === "pending");
+  const review = apps.filter(a => a.status === "under_review");
+  const collected = apps.reduce((s, a) => s + a.commitment, 0);
 
   return (
-    <AppShell user={user} subtitle="Manager · back office">
-      <div className="rise">
-        <h1 className="text-3xl font-black tracking-tight">Manager console</h1>
-        <p className="mt-1 text-[color:var(--color-muted)]">Review commitments and release 0% interest loans.</p>
+    <div className="min-h-screen">
+      <SiteHeader />
+      <main className="mx-auto max-w-7xl px-5 py-10 lg:px-8">
+        <h1 className="display text-3xl font-black tracking-tight">Manager console</h1>
+        <p className="mt-1 text-[color:var(--color-muted)]">
+          Verifications and decisions sync to client dashboards in real time.
+        </p>
 
         <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <KpiCard label="Pending review" value={String(pending)} tone="sun" />
-          <KpiCard label="Total applications" value={String(apps.length)} tone="sky" />
-          <KpiCard label="Approved book" value={money(book)} />
-          <KpiCard label="Commitments collected" value={money(fees)} tone="sky" />
+          <KpiCard label="Clients" value={String(clients.length)} tone="sky" />
+          <KpiCard label="Verifications pending" value={String(pending.length)} tone="sun" />
+          <KpiCard label="Loans in review" value={String(review.length)} />
+          <KpiCard label="Commitments collected" value={money(collected)} />
         </div>
 
-        <div className="mt-8 flex flex-wrap gap-2">
-          {(["all", "under_review", "awaiting_commitment", "approved", "declined"] as const).map(f => (
-            <button key={f} onClick={() => setFilter(f)}
-              className={`rounded-full px-4 py-2 text-xs font-bold capitalize transition ${
-                filter === f ? "btn-navy" : "border border-[color:var(--color-line)] bg-white text-[color:var(--color-navy)] hover:bg-[color:var(--color-sky)]"
-              }`}>
-              {f.replace(/_/g, " ")}
-            </button>
-          ))}
-        </div>
-
-        <div className="mt-4 card overflow-hidden">
-          {shown.length === 0 ? (
-            <p className="px-6 py-10 text-center text-sm text-[color:var(--color-muted)]">No applications in this view.</p>
+        <section className="card mt-8 overflow-hidden">
+          <div className="border-b border-[color:var(--color-line)] px-6 py-4">
+            <h2 className="text-lg font-bold">Identity verification queue</h2>
+          </div>
+          {clients.length === 0 ? (
+            <p className="px-6 py-10 text-center text-sm text-[color:var(--color-muted)]">No client accounts yet.</p>
           ) : (
             <div className="divide-y divide-[color:var(--color-line)]">
-              {shown.map(a => (
-                <div key={a.id} className="grid gap-4 px-6 py-5 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
-                  <div className="min-w-0">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="font-black">{a.name}</span>
-                      <StatusPill status={a.status} />
-                    </div>
-                    <div className="mt-1 text-sm text-[color:var(--color-muted)]">
-                      {a.id} · {money(a.amount)} over {a.term} months · {a.purpose}
-                    </div>
-                    <div className="mt-1 text-xs text-[color:var(--color-muted)]">
-                      Commitment {money(a.commitment)} ({a.commitmentPct}%) · {a.provider} {a.msisdn} · {a.email}
-                    </div>
+              {clients.map(c => (
+                <div key={c.email} className="grid gap-3 px-6 py-4 sm:grid-cols-[1fr_auto] sm:items-center">
+                  <div>
+                    <div className="font-bold">{c.name}</div>
+                    <div className="text-xs text-[color:var(--color-muted)]">{c.email} · {c.phone ?? "no phone"} · KYC: {c.kyc}</div>
                   </div>
-                  <div className="flex shrink-0 flex-wrap gap-2">
-                    <button onClick={() => act(a.id, "approved")}
-                      className="btn-primary rounded-full px-4 py-2 text-xs font-bold">Approve</button>
-                    <button onClick={() => act(a.id, "declined")}
-                      className="rounded-full border border-red-200 bg-red-50 px-4 py-2 text-xs font-bold text-red-600 hover:bg-red-100">Decline</button>
-                    <button onClick={() => act(a.id, "under_review")}
-                      className="rounded-full border border-[color:var(--color-line)] px-4 py-2 text-xs font-bold text-[color:var(--color-navy)] hover:bg-[color:var(--color-sky)]">Reset</button>
+                  <div className="flex flex-wrap gap-2">
+                    <button onClick={() => reviewKyc(c.email, "verified")} disabled={c.kyc === "verified"}
+                      className="btn-primary rounded-full px-4 py-2 text-xs font-bold disabled:opacity-40">Approve</button>
+                    <button onClick={() => reviewKyc(c.email, "rejected", "Details did not match our records.")} disabled={c.kyc === "rejected"}
+                      className="rounded-full border border-red-200 px-4 py-2 text-xs font-bold text-red-600 hover:bg-red-50 disabled:opacity-40">Reject</button>
                   </div>
                 </div>
               ))}
             </div>
           )}
-        </div>
-      </div>
-    </AppShell>
+        </section>
+
+        <section className="card mt-8 overflow-hidden">
+          <div className="border-b border-[color:var(--color-line)] px-6 py-4">
+            <h2 className="text-lg font-bold">Loan applications</h2>
+          </div>
+          <div className="divide-y divide-[color:var(--color-line)]">
+            {apps.map(a => (
+              <div key={a.id} className="grid gap-3 px-6 py-4 lg:grid-cols-[1fr_auto] lg:items-center">
+                <div>
+                  <div className="font-bold">{a.id} · {a.name} · {money(a.amount)}</div>
+                  <div className="text-xs text-[color:var(--color-muted)]">
+                    {a.product} · {a.term} months · commitment {money(a.commitment)} ({a.commitmentPct}%) via {a.provider} {a.msisdn}
+                  </div>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <StatusPill status={a.status} />
+                  <button onClick={() => updateApplication(a.id, { status: "approved" })} disabled={a.status === "approved"}
+                    className="btn-primary rounded-full px-4 py-2 text-xs font-bold disabled:opacity-40">Approve</button>
+                  <button onClick={() => updateApplication(a.id, { status: "declined" })} disabled={a.status === "declined"}
+                    className="rounded-full border border-red-200 px-4 py-2 text-xs font-bold text-red-600 hover:bg-red-50 disabled:opacity-40">Decline</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      </main>
+      <SiteFooter />
+    </div>
   );
 }
