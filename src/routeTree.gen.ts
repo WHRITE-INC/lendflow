@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ApplyRouteImport } from './routes/apply'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as ManagerRouteImport } from './routes/manager'
@@ -17,6 +18,11 @@ import { Route as ManagerRouteImport } from './routes/manager'
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApplyRoute = ApplyRouteImport.update({
+  id: '/apply',
+  path: '/apply',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -37,12 +43,14 @@ const ManagerRoute = ManagerRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/apply': typeof ApplyRoute
   '/auth': typeof AuthRoute
   '/dashboard': typeof DashboardRoute
   '/manager': typeof ManagerRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/apply': typeof ApplyRoute
   '/auth': typeof AuthRoute
   '/dashboard': typeof DashboardRoute
   '/manager': typeof ManagerRoute
@@ -50,20 +58,22 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/apply': typeof ApplyRoute
   '/auth': typeof AuthRoute
   '/dashboard': typeof DashboardRoute
   '/manager': typeof ManagerRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/dashboard' | '/manager'
+  fullPaths: '/' | '/apply' | '/auth' | '/dashboard' | '/manager'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/dashboard' | '/manager'
-  id: '__root__' | '/' | '/auth' | '/dashboard' | '/manager'
+  to: '/' | '/apply' | '/auth' | '/dashboard' | '/manager'
+  id: '__root__' | '/' | '/apply' | '/auth' | '/dashboard' | '/manager'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ApplyRoute: typeof ApplyRoute
   AuthRoute: typeof AuthRoute
   DashboardRoute: typeof DashboardRoute
   ManagerRoute: typeof ManagerRoute
@@ -76,6 +86,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/apply': {
+      id: '/apply'
+      path: '/apply'
+      fullPath: '/apply'
+      preLoaderRoute: typeof ApplyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -104,6 +121,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ApplyRoute: ApplyRoute,
   AuthRoute: AuthRoute,
   DashboardRoute: DashboardRoute,
   ManagerRoute: ManagerRoute,
