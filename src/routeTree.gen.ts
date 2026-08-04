@@ -10,13 +10,29 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AboutRouteImport } from './routes/about'
+import { Route as ApplyRouteImport } from './routes/apply'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as InvestmentsRouteImport } from './routes/investments'
 import { Route as ManagerRouteImport } from './routes/manager'
+import { Route as PaymentsRouteImport } from './routes/payments'
+import { Route as LoansIndexRouteImport } from './routes/loans.index'
+import { Route as LoansSlugRouteImport } from './routes/loans.$slug'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AboutRoute = AboutRouteImport.update({
+  id: '/about',
+  path: '/about',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApplyRoute = ApplyRouteImport.update({
+  id: '/apply',
+  path: '/apply',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -29,44 +45,119 @@ const DashboardRoute = DashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
+const InvestmentsRoute = InvestmentsRouteImport.update({
+  id: '/investments',
+  path: '/investments',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ManagerRoute = ManagerRouteImport.update({
   id: '/manager',
   path: '/manager',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PaymentsRoute = PaymentsRouteImport.update({
+  id: '/payments',
+  path: '/payments',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoansIndexRoute = LoansIndexRouteImport.update({
+  id: '/loans/',
+  path: '/loans/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoansSlugRoute = LoansSlugRouteImport.update({
+  id: '/loans/$slug',
+  path: '/loans/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/about': typeof AboutRoute
+  '/apply': typeof ApplyRoute
   '/auth': typeof AuthRoute
   '/dashboard': typeof DashboardRoute
+  '/investments': typeof InvestmentsRoute
   '/manager': typeof ManagerRoute
+  '/payments': typeof PaymentsRoute
+  '/loans/$slug': typeof LoansSlugRoute
+  '/loans/': typeof LoansIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/about': typeof AboutRoute
+  '/apply': typeof ApplyRoute
   '/auth': typeof AuthRoute
   '/dashboard': typeof DashboardRoute
+  '/investments': typeof InvestmentsRoute
   '/manager': typeof ManagerRoute
+  '/payments': typeof PaymentsRoute
+  '/loans/$slug': typeof LoansSlugRoute
+  '/loans': typeof LoansIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/about': typeof AboutRoute
+  '/apply': typeof ApplyRoute
   '/auth': typeof AuthRoute
   '/dashboard': typeof DashboardRoute
+  '/investments': typeof InvestmentsRoute
   '/manager': typeof ManagerRoute
+  '/payments': typeof PaymentsRoute
+  '/loans/$slug': typeof LoansSlugRoute
+  '/loans/': typeof LoansIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/dashboard' | '/manager'
+  fullPaths:
+    | '/'
+    | '/about'
+    | '/apply'
+    | '/auth'
+    | '/dashboard'
+    | '/investments'
+    | '/manager'
+    | '/payments'
+    | '/loans/$slug'
+    | '/loans/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/dashboard' | '/manager'
-  id: '__root__' | '/' | '/auth' | '/dashboard' | '/manager'
+  to:
+    | '/'
+    | '/about'
+    | '/apply'
+    | '/auth'
+    | '/dashboard'
+    | '/investments'
+    | '/manager'
+    | '/payments'
+    | '/loans/$slug'
+    | '/loans'
+  id:
+    | '__root__'
+    | '/'
+    | '/about'
+    | '/apply'
+    | '/auth'
+    | '/dashboard'
+    | '/investments'
+    | '/manager'
+    | '/payments'
+    | '/loans/$slug'
+    | '/loans/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AboutRoute: typeof AboutRoute
+  ApplyRoute: typeof ApplyRoute
   AuthRoute: typeof AuthRoute
   DashboardRoute: typeof DashboardRoute
+  InvestmentsRoute: typeof InvestmentsRoute
   ManagerRoute: typeof ManagerRoute
+  PaymentsRoute: typeof PaymentsRoute
+  LoansSlugRoute: typeof LoansSlugRoute
+  LoansIndexRoute: typeof LoansIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -76,6 +167,20 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/about': {
+      id: '/about'
+      path: '/about'
+      fullPath: '/about'
+      preLoaderRoute: typeof AboutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/apply': {
+      id: '/apply'
+      path: '/apply'
+      fullPath: '/apply'
+      preLoaderRoute: typeof ApplyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -92,6 +197,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/investments': {
+      id: '/investments'
+      path: '/investments'
+      fullPath: '/investments'
+      preLoaderRoute: typeof InvestmentsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/manager': {
       id: '/manager'
       path: '/manager'
@@ -99,14 +211,41 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ManagerRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/payments': {
+      id: '/payments'
+      path: '/payments'
+      fullPath: '/payments'
+      preLoaderRoute: typeof PaymentsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/loans/': {
+      id: '/loans/'
+      path: '/loans'
+      fullPath: '/loans/'
+      preLoaderRoute: typeof LoansIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/loans/$slug': {
+      id: '/loans/$slug'
+      path: '/loans/$slug'
+      fullPath: '/loans/$slug'
+      preLoaderRoute: typeof LoansSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AboutRoute: AboutRoute,
+  ApplyRoute: ApplyRoute,
   AuthRoute: AuthRoute,
   DashboardRoute: DashboardRoute,
+  InvestmentsRoute: InvestmentsRoute,
   ManagerRoute: ManagerRoute,
+  PaymentsRoute: PaymentsRoute,
+  LoansSlugRoute: LoansSlugRoute,
+  LoansIndexRoute: LoansIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
