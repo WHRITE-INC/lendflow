@@ -1,35 +1,40 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import { Brand } from "@/components/Brand";
+import { SiteHeader, SiteFooter } from "@/components/SiteChrome";
 import { DEMO_ACCOUNTS, signIn, signUp } from "@/lib/demo-auth";
-import { inputCls } from "./index";
+import { inputCls } from "@/lib/ui";
 import { cn } from "@/lib/utils";
 import { KeyRound, ShieldCheck, UserPlus } from "lucide-react";
 
+type Search = { mode?: "signin" | "signup" };
+
 export const Route = createFileRoute("/auth")({
+  validateSearch: (s: Record<string, unknown>): Search => ({
+    mode: s['mode'] === "signup" ? "signup" : "signin",
+  }),
   head: () => ({
     meta: [
-      { title: "Sign in — LendFlow Africa" },
-      { name: "description", content: "Sign in to your LendFlow Africa borrower or manager dashboard, or create a new client account." },
-      { property: "og:title", content: "Sign in — LendFlow Africa" },
+      { title: "Sign in or register — LendFlow Africa" },
+      { name: "description", content: "Sign in to your LendFlow Africa dashboard or create a free account to apply for a 0% interest loan." },
+      { property: "og:title", content: "Sign in or register — LendFlow Africa" },
       { property: "og:description", content: "Access your LendFlow Africa dashboard." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
+  ssr: false,
   component: AuthPage,
 });
 
 function AuthPage() {
   const navigate = useNavigate();
-  const [mode, setMode] = useState<"signin" | "signup">("signin");
+  const search = Route.useSearch();
+  const [mode, setMode] = useState<"signin" | "signup">(search.mode ?? "signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [error, setError] = useState("");
-
-  const go = (role: string) => navigate({ to: role === "manager" ? "/manager" : "/dashboard" });
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,13 +42,14 @@ function AuthPage() {
     if (mode === "signin") {
       const user = signIn(email, password);
       if (!user) return setError("Incorrect email or password.");
-      go(user.role);
+      navigate({ to: user.role === "manager" ? "/manager" : "/dashboard" });
     } else {
       if (!name.trim()) return setError("Please enter your full name.");
+      if (!/^\S+@\S+\.\S+$/.test(email)) return setError("Please enter a valid email address.");
       if (password.length < 6) return setError("Password must be at least 6 characters.");
       const res = signUp({ name, email, password, phone });
       if (!res.ok) return setError(res.error);
-      go("client");
+      navigate({ to: "/dashboard" });
     }
   };
 
@@ -56,27 +62,24 @@ function AuthPage() {
 
   return (
     <div className="min-h-screen">
-      <header className="mx-auto max-w-6xl px-6 py-6">
-        <Link to="/"><Brand /></Link>
-      </header>
-
-      <main className="mx-auto grid max-w-6xl gap-8 px-6 pb-20 lg:grid-cols-2">
+      <SiteHeader />
+      <main className="mx-auto grid max-w-6xl gap-8 px-5 py-12 lg:grid-cols-2 lg:px-8">
         <div className="card rise p-8">
           <div className="flex gap-2 rounded-full bg-[color:var(--color-sky)] p-1">
             {(["signin", "signup"] as const).map(m => (
-              <button key={m} onClick={() => { setMode(m); setError(""); }}
+              <button key={m} type="button" onClick={() => { setMode(m); setError(""); }}
                 className={cn("flex-1 rounded-full px-4 py-2 text-sm font-bold transition",
                   mode === m ? "bg-white text-[color:var(--color-navy)] shadow" : "text-[color:var(--color-muted)]")}>
-                {m === "signin" ? "Sign in" : "New client"}
+                {m === "signin" ? "Sign in" : "Create account"}
               </button>
             ))}
           </div>
 
-          <h1 className="mt-6 text-2xl font-black tracking-tight">
-            {mode === "signin" ? "Welcome back" : "Create your client account"}
+          <h1 className="display mt-6 text-2xl font-black tracking-tight">
+            {mode === "signin" ? "Welcome back" : "Create your free account"}
           </h1>
           <p className="mt-1 text-sm text-[color:var(--color-muted)]">
-            {mode === "signin" ? "Managers and clients use the same sign-in." : "Free to join. Apply for 0% interest loans in minutes."}
+            {mode === "signin" ? "Clients and managers use the same sign-in." : "Register, verify once, and apply for a 0% interest loan."}
           </p>
 
           <form onSubmit={submit} className="mt-6 space-y-4">
@@ -119,7 +122,7 @@ function AuthPage() {
                     <div className="flex justify-between gap-3"><dt className="text-[color:var(--color-muted)]">Email</dt><dd className="font-bold">{a.email}</dd></div>
                     <div className="flex justify-between gap-3"><dt className="text-[color:var(--color-muted)]">Password</dt><dd className="font-bold">{a.password}</dd></div>
                   </dl>
-                  <button onClick={() => useDemo(i)} className="btn-navy mt-4 w-full rounded-full px-4 py-2 text-xs font-bold">
+                  <button type="button" onClick={() => useDemo(i)} className="btn-navy mt-4 w-full rounded-full px-4 py-2 text-xs font-bold">
                     Use these credentials
                   </button>
                 </div>
@@ -127,11 +130,13 @@ function AuthPage() {
             </div>
           </div>
           <div className="card p-6 text-sm text-[color:var(--color-muted)]">
-            New clients: register above, then pay a <strong className="text-[color:var(--color-navy)]">10–15% commitment</strong> to
-            unlock your 0% interest loan.
+            New clients: register, tap <strong className="text-[color:var(--color-navy)]">Verify my identity</strong> once on your
+            dashboard, then apply. All loans are 0% interest with a 10–15% commitment.{" "}
+            <Link to="/loans" className="font-bold text-[color:var(--color-leaf-dark)]">See loan options</Link>.
           </div>
         </div>
       </main>
+      <SiteFooter />
     </div>
   );
 }
