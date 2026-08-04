@@ -14,6 +14,7 @@ import { Route as ApplyRouteImport } from './routes/apply'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as ManagerRouteImport } from './routes/manager'
+import { Route as PaymentsRouteImport } from './routes/payments'
 import { Route as LoansIndexRouteImport } from './routes/loans.index'
 import { Route as LoansSlugRouteImport } from './routes/loans.$slug'
 
@@ -42,6 +43,11 @@ const ManagerRoute = ManagerRouteImport.update({
   path: '/manager',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PaymentsRoute = PaymentsRouteImport.update({
+  id: '/payments',
+  path: '/payments',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LoansIndexRoute = LoansIndexRouteImport.update({
   id: '/loans/',
   path: '/loans/',
@@ -59,6 +65,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/dashboard': typeof DashboardRoute
   '/manager': typeof ManagerRoute
+  '/payments': typeof PaymentsRoute
   '/loans/$slug': typeof LoansSlugRoute
   '/loans/': typeof LoansIndexRoute
 }
@@ -68,6 +75,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/dashboard': typeof DashboardRoute
   '/manager': typeof ManagerRoute
+  '/payments': typeof PaymentsRoute
   '/loans/$slug': typeof LoansSlugRoute
   '/loans': typeof LoansIndexRoute
 }
@@ -78,6 +86,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/dashboard': typeof DashboardRoute
   '/manager': typeof ManagerRoute
+  '/payments': typeof PaymentsRoute
   '/loans/$slug': typeof LoansSlugRoute
   '/loans/': typeof LoansIndexRoute
 }
@@ -89,6 +98,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/dashboard'
     | '/manager'
+    | '/payments'
     | '/loans/$slug'
     | '/loans/'
   fileRoutesByTo: FileRoutesByTo
@@ -98,6 +108,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/dashboard'
     | '/manager'
+    | '/payments'
     | '/loans/$slug'
     | '/loans'
   id:
@@ -107,6 +118,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/dashboard'
     | '/manager'
+    | '/payments'
     | '/loans/$slug'
     | '/loans/'
   fileRoutesById: FileRoutesById
@@ -117,6 +129,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   DashboardRoute: typeof DashboardRoute
   ManagerRoute: typeof ManagerRoute
+  PaymentsRoute: typeof PaymentsRoute
   LoansSlugRoute: typeof LoansSlugRoute
   LoansIndexRoute: typeof LoansIndexRoute
 }
@@ -158,6 +171,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ManagerRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/payments': {
+      id: '/payments'
+      path: '/payments'
+      fullPath: '/payments'
+      preLoaderRoute: typeof PaymentsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/loans/': {
       id: '/loans/'
       path: '/loans'
@@ -181,6 +201,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   DashboardRoute: DashboardRoute,
   ManagerRoute: ManagerRoute,
+  PaymentsRoute: PaymentsRoute,
   LoansSlugRoute: LoansSlugRoute,
   LoansIndexRoute: LoansIndexRoute,
 }
