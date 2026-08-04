@@ -15,7 +15,7 @@ export default defineConfig({
   plugins: [
     tailwindcss(),
     // Deploys to Vercel when VERCEL is set; keeps the default target elsewhere.
-    tanstackStart(process.env["VERCEL"] ? { target: "vercel" } : {}),
+    tanstackStart(),
     react(),
   ],
 });
