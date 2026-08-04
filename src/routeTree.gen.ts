@@ -14,6 +14,8 @@ import { Route as ApplyRouteImport } from './routes/apply'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as ManagerRouteImport } from './routes/manager'
+import { Route as LoansIndexRouteImport } from './routes/loans.index'
+import { Route as LoansSlugRouteImport } from './routes/loans.$slug'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -40,6 +42,16 @@ const ManagerRoute = ManagerRouteImport.update({
   path: '/manager',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LoansIndexRoute = LoansIndexRouteImport.update({
+  id: '/loans/',
+  path: '/loans/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoansSlugRoute = LoansSlugRouteImport.update({
+  id: '/loans/$slug',
+  path: '/loans/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -47,6 +59,8 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/dashboard': typeof DashboardRoute
   '/manager': typeof ManagerRoute
+  '/loans/$slug': typeof LoansSlugRoute
+  '/loans/': typeof LoansIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -54,6 +68,8 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/dashboard': typeof DashboardRoute
   '/manager': typeof ManagerRoute
+  '/loans/$slug': typeof LoansSlugRoute
+  '/loans': typeof LoansIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -62,13 +78,37 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/dashboard': typeof DashboardRoute
   '/manager': typeof ManagerRoute
+  '/loans/$slug': typeof LoansSlugRoute
+  '/loans/': typeof LoansIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/apply' | '/auth' | '/dashboard' | '/manager'
+  fullPaths:
+    | '/'
+    | '/apply'
+    | '/auth'
+    | '/dashboard'
+    | '/manager'
+    | '/loans/$slug'
+    | '/loans/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/apply' | '/auth' | '/dashboard' | '/manager'
-  id: '__root__' | '/' | '/apply' | '/auth' | '/dashboard' | '/manager'
+  to:
+    | '/'
+    | '/apply'
+    | '/auth'
+    | '/dashboard'
+    | '/manager'
+    | '/loans/$slug'
+    | '/loans'
+  id:
+    | '__root__'
+    | '/'
+    | '/apply'
+    | '/auth'
+    | '/dashboard'
+    | '/manager'
+    | '/loans/$slug'
+    | '/loans/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -77,6 +117,8 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   DashboardRoute: typeof DashboardRoute
   ManagerRoute: typeof ManagerRoute
+  LoansSlugRoute: typeof LoansSlugRoute
+  LoansIndexRoute: typeof LoansIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -116,6 +158,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ManagerRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/loans/': {
+      id: '/loans/'
+      path: '/loans'
+      fullPath: '/loans/'
+      preLoaderRoute: typeof LoansIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/loans/$slug': {
+      id: '/loans/$slug'
+      path: '/loans/$slug'
+      fullPath: '/loans/$slug'
+      preLoaderRoute: typeof LoansSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -125,6 +181,8 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   DashboardRoute: DashboardRoute,
   ManagerRoute: ManagerRoute,
+  LoansSlugRoute: LoansSlugRoute,
+  LoansIndexRoute: LoansIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
