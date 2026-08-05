@@ -3,6 +3,15 @@ import { useEffect, useState } from "react";
 export type Role = "manager" | "client";
 export type KycStatus = "unverified" | "pending" | "verified" | "rejected";
 
+export type KycDocKey = "idFront" | "idBack" | "selfie";
+export type KycDocs = Partial<Record<KycDocKey, string>>;
+
+export const KYC_DOC_FIELDS: { key: KycDocKey; label: string; hint: string }[] = [
+  { key: "idFront", label: "National ID — front", hint: "All four corners visible, no glare" },
+  { key: "idBack", label: "National ID — back", hint: "Make sure the text is readable" },
+  { key: "selfie", label: "Selfie with your ID", hint: "Hold the ID next to your face" },
+];
+
 export type Account = {
   email: string;
   password: string;
@@ -11,6 +20,7 @@ export type Account = {
   phone?: string;
   nrc?: string;
   kyc: KycStatus;
+  kycDocs?: KycDocs;
   kycSubmittedAt?: string;
   kycReviewedAt?: string;
   kycNote?: string;
@@ -156,9 +166,52 @@ export function updateUser(email: string, patch: Partial<Account>) {
 }
 
 /* ---------------- KYC (single consolidated verification) ---------------- */
+export function saveKycDoc(email: string, key: KycDocKey, dataUrl: string) {
+  const user = allUsers().find(u => u.email === email);
+  updateUser(email, { kycDocs: { ...(user?.kycDocs ?? {}), [key]: dataUrl } });
+}
+export function removeKycDoc(email: string, key: KycDocKey) {
+  const user = allUsers().find(u => u.email === email);
+  const docs = { ...(user?.kycDocs ?? {}) };
+  delete docs[key];
+  updateUser(email, { kycDocs: docs });
+}
+export const kycDocsComplete = (u: Account | null) =>
+  !!u && KYC_DOC_FIELDS.every(f => !!u.kycDocs?.[f.key]);
+
 export function submitKyc(email: string) {
   updateUser(email, { kyc: "pending", kycSubmittedAt: new Date().toISOString(), kycNote: undefined });
 }
+
+/** Downscale an uploaded photo to a compact data URL so it fits in demo storage. */
+export async function fileToDataUrl(file: File, max = 900): Promise<string> {
+  const raw: string = await new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = () => reject(new Error("Could not read the file"));
+    reader.readAsDataURL(file);
+  });
+  if (typeof document === "undefined" || !file.type.startsWith("image/")) return raw;
+  try {
+    const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const el = new Image();
+      el.onload = () => resolve(el);
+      el.onerror = () => reject(new Error("Invalid image"));
+      el.src = raw;
+    });
+    const scale = Math.min(1, max / Math.max(img.width, img.height));
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.round(img.width * scale);
+    canvas.height = Math.round(img.height * scale);
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return raw;
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    return canvas.toDataURL("image/jpeg", 0.72);
+  } catch {
+    return raw;
+  }
+}
+
 export function reviewKyc(email: string, decision: "verified" | "rejected", note?: string) {
   updateUser(email, { kyc: decision, kycReviewedAt: new Date().toISOString(), kycNote: note });
 }
