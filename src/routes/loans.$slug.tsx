@@ -19,9 +19,7 @@ export const Route = createFileRoute("/loans/$slug")({
         { property: "og:title", content: `${p.name} — LendFlow Africa` },
         { property: "og:description", content: p.blurb },
         { property: "og:type", content: "website" },
-        { property: "og:image", content: p.image },
         { name: "twitter:card", content: "summary_large_image" },
-        { name: "twitter:image", content: p.image },
       ] : [],
     };
   },
