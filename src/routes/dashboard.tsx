@@ -1,12 +1,13 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { SiteHeader, SiteFooter } from "@/components/SiteChrome";
 import { KpiCard, StatusPill } from "@/components/AppShell";
 import {
-  canApply, currentUser, listApplications, money, submitKyc, useRealtime,
-  type Account, type Application,
+  canApply, currentUser, fileToDataUrl, kycDocsComplete, KYC_DOC_FIELDS, listApplications, money,
+  removeKycDoc, saveKycDoc, submitKyc, useRealtime,
+  type Account, type Application, type KycDocKey,
 } from "@/lib/demo-auth";
-import { ShieldCheck, Clock, XCircle, BadgeCheck, ArrowRight } from "lucide-react";
+import { ShieldCheck, Clock, XCircle, BadgeCheck, ArrowRight, Upload, Trash2, Check } from "lucide-react";
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({
