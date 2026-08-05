@@ -3,8 +3,8 @@ import { useEffect, useState } from "react";
 import { SiteHeader, SiteFooter } from "@/components/SiteChrome";
 import { KpiCard, StatusPill } from "@/components/AppShell";
 import {
-  allUsers, currentUser, listApplications, money, reviewKyc, updateApplication, useRealtime,
-  type Account, type Application,
+  allUsers, currentUser, KYC_DOC_FIELDS, listApplications, money, reviewKyc, updateApplication,
+  useRealtime, type Account, type Application,
 } from "@/lib/demo-auth";
 
 export const Route = createFileRoute("/manager")({
@@ -68,10 +68,34 @@ function Manager() {
           ) : (
             <div className="divide-y divide-[color:var(--color-line)]">
               {clients.map(c => (
-                <div key={c.email} className="grid gap-3 px-6 py-4 sm:grid-cols-[1fr_auto] sm:items-center">
+                <div key={c.email} className="grid gap-4 px-6 py-5 lg:grid-cols-[1fr_auto] lg:items-center">
                   <div>
-                    <div className="font-bold">{c.name}</div>
-                    <div className="text-xs text-[color:var(--color-muted)]">{c.email} · {c.phone ?? "no phone"} · KYC: {c.kyc}</div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="font-bold">{c.name}</span>
+                      <StatusPill status={c.kyc} />
+                    </div>
+                    <div className="text-xs text-[color:var(--color-muted)]">{c.email} · {c.phone ?? "no phone"}</div>
+                    <div className="mt-3 flex flex-wrap gap-3">
+                      {KYC_DOC_FIELDS.map(f => {
+                        const src = c.kycDocs?.[f.key];
+                        return (
+                          <figure key={f.key} className="w-32">
+                            <div className="aspect-[4/3] overflow-hidden rounded-xl border border-[color:var(--color-line)] bg-[color:var(--color-bg)]">
+                              {src ? (
+                                <a href={src} target="_blank" rel="noreferrer">
+                                  <img src={src} alt={`${c.name} — ${f.label}`} className="h-full w-full object-cover" />
+                                </a>
+                              ) : (
+                                <div className="grid h-full place-items-center text-[10px] font-bold uppercase tracking-widest text-[color:var(--color-muted)]">
+                                  Missing
+                                </div>
+                              )}
+                            </div>
+                            <figcaption className="mt-1 text-[10px] font-semibold text-[color:var(--color-muted)]">{f.label}</figcaption>
+                          </figure>
+                        );
+                      })}
+                    </div>
                   </div>
                   <div className="flex flex-wrap gap-2">
                     <button onClick={() => reviewKyc(c.email, "verified")} disabled={c.kyc === "verified"}
