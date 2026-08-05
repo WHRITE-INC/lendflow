@@ -44,6 +44,10 @@ export function KpiCard({ label, value, hint, tone = "mint" }:
 export function StatusPill({ status }: { status: string }) {
   const map: Record<string, string> = {
     approved: "bg-[color:var(--color-mint)] text-[color:var(--color-leaf-dark)]",
+    verified: "bg-[color:var(--color-mint)] text-[color:var(--color-leaf-dark)]",
+    pending: "bg-amber-50 text-amber-700",
+    unverified: "bg-[color:var(--color-sky)] text-[color:var(--color-navy)]",
+    rejected: "bg-red-50 text-red-600",
     under_review: "bg-[color:var(--color-sky)] text-[color:var(--color-navy)]",
     awaiting_commitment: "bg-amber-50 text-amber-700",
     declined: "bg-red-50 text-red-600",

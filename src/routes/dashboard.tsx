@@ -128,6 +128,7 @@ function VerificationCard({ user }: { user: Account }) {
   }[state];
 
   return (
+    <>
     <section className={`card mt-8 flex flex-col gap-5 border p-7 sm:flex-row sm:items-center ${tone}`} aria-live="polite">
       <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-white shadow-sm">{icon}</div>
       <div className="flex-1">
@@ -145,6 +146,8 @@ function VerificationCard({ user }: { user: Account }) {
         </button>
       )}
     </section>
+    <KycDocuments user={user} locked={locked} error={error} />
+    </>
   );
 }
 
