@@ -15,12 +15,15 @@ const NAV = [
 
 export function SiteHeader() {
   const navigate = useNavigate();
-  const user = useRealtime<Account | null>(() => currentUser());
+  const liveUser = useRealtime<Account | null>(() => currentUser());
+  const [mounted, setMounted] = useState(false);
+  const user = mounted ? liveUser : null;
   const [open, setOpen] = useState(false);
   const [menu, setMenu] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
     const onScroll = () => setScrolled(window.scrollY > 8);
     onScroll();
     window.addEventListener("scroll", onScroll);
